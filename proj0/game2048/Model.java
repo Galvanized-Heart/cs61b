@@ -5,7 +5,7 @@ import java.util.Observable;
 
 
 /** The state of a game of 2048.
- *  @author TODO: YOUR NAME HERE
+ *  @author Max Kirby
  */
 public class Model extends Observable {
     /** Current contents of the board. */
@@ -110,9 +110,141 @@ public class Model extends Observable {
         boolean changed;
         changed = false;
 
+
         // TODO: Modify this.board (and perhaps this.score) to account
         // for the tilt to the Side SIDE. If the board changed, set the
         // changed local variable to true.
+
+        int size = board.size();
+        if (side == Side.NORTH) {
+
+            for (int col = 0; col < size; col += 1) {
+                int move = 0;
+                int merger = 0;
+
+                for (int row = size-1; row > -1; row -= 1) {
+                    boolean ifMerged = false;
+                    Tile t = board.tile(col, row);
+
+                    // Add 1 to move: if null above or mergeable
+                    if (t == null || (t != null && t.value() == merger)) {
+                        move += 1;
+                    }
+
+                    // Set x, Make move
+                    if (t != null) {
+                        merger = t.value();
+                        if (move > 0) {
+                            ifMerged = board.move(col, row+move, t);
+                            changed = true;
+                        }
+                    }
+
+                    // Update score, reset x
+                    if (ifMerged) {
+                        score += merger + merger;
+                        merger = 0;
+                    }
+                }
+            }
+        }
+        if (side == Side.EAST) {
+
+            for (int row = 0; row < size; row += 1) {// 0, 1, 2, 3 col
+                int move = 0;
+                int merger = 0;
+
+                for (int col = size-1; col > -1; col -= 1) { // 0, 1, 2, 3 row
+                    boolean ifMerged = false;
+                    Tile t = board.tile(col, row);
+
+                    // Add 1 to move: if null right or mergeable
+                    if (t == null || (t != null && t.value() == merger)) {
+                        move += 1;
+                    }
+
+                    // Set x, Make move
+                    if (t != null) {
+                        merger = t.value();
+                        if (move > 0) {
+                            ifMerged = board.move(col+move, row, t);
+                            changed = true;
+                        }
+                    }
+
+                    // Update score, reset x
+                    if (ifMerged) {
+                        score += merger + merger;
+                        merger = 0;
+                    }
+                }
+            }
+        }
+        if (side == Side.SOUTH) {
+
+            for (int col = 0; col < size; col += 1) {     // 0, 1, 2, 3 col
+                int move = 0;
+                int merger = 0;
+
+                for (int row = 0; row < size; row += 1) { // 0, 1, 2, 3 row
+                    boolean ifMerged = false;
+                    Tile t = board.tile(col, row);
+
+                    // Add 1 to move: if null below or mergeable
+                    if (t == null || (t != null && t.value() == merger)) {
+                        move += 1;
+                    }
+
+                    // Set x, Make move
+                    if (t != null) {
+                        merger = t.value();
+                        if (move > 0) {
+                            ifMerged = board.move(col, row-move, t);
+                            changed = true;
+                        }
+                    }
+
+                    // Update score, reset x
+                    if (ifMerged) {
+                        score += merger + merger;
+                        merger = 0;
+                    }
+                }
+            }
+        }
+        if (side == Side.WEST) {
+
+            for (int row = 0; row < size; row += 1) {
+                int move = 0;
+                int merger = 0;
+
+                for (int col = 0; col < size; col += 1) {
+                    boolean ifMerged = false;
+                    Tile t = board.tile(col, row);
+
+                    // Add 1 to move: if null left or mergeable
+                    if (t == null || (t != null && t.value() == merger)) {
+                        move += 1;
+                    }
+
+                    // Set x, Make move
+                    if (t != null) {
+                        merger = t.value();
+                        if (move > 0) {
+                            ifMerged = board.move(col-move, row, t);
+                            changed = true;
+                        }
+                    }
+
+                    // Update score, reset x
+                    if (ifMerged) {
+                        score += merger + merger;
+                        merger = 0;
+                    }
+                }
+            }
+        }
+
 
         checkGameOver();
         if (changed) {
@@ -137,7 +269,18 @@ public class Model extends Observable {
      *  Empty spaces are stored as null.
      * */
     public static boolean emptySpaceExists(Board b) {
-        // TODO: Fill in this function.
+        // TODO: Fill in this function
+        // return true if given board has null tile
+        // use tile(int col, int row) and size() methods from board class
+        // board is private, so you can't use instance vars from it directly (use tile method)
+        int size = b.size();
+        for (int row = 0; row < size; row += 1) {
+            for (int col = 0; col < size; col += 1) {
+                if (b.tile(col, row) == null) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -148,6 +291,19 @@ public class Model extends Observable {
      */
     public static boolean maxTileExists(Board b) {
         // TODO: Fill in this function.
+        // return true if any of tiles are equal to winning value (int MAX_PIECE)
+        int size = b.size();
+        for (int row = 0; row < size; row += 1) {
+            for (int col = 0; col < size; col += 1) {
+                if (b.tile(col, row) == null) {
+                    continue;
+                }
+                int x = b.tile(col, row).value();
+                if (x == MAX_PIECE) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
@@ -159,6 +315,38 @@ public class Model extends Observable {
      */
     public static boolean atLeastOneMoveExists(Board b) {
         // TODO: Fill in this function.
+
+        // Check for empty spaces and if max sized piece exist
+        boolean emptySpace = emptySpaceExists(b);
+        boolean maxPiece = maxTileExists(b);
+        if (emptySpace || maxPiece) {
+            return true;
+        }
+
+        int size = b.size();
+
+        // Check for combo moves in horizontal direction
+        for (int row = 0; row < size; row += 1) {
+            for (int col = 0; col < size-1; col += 1) {
+                int x = b.tile(col, row).value();
+                int y = b.tile(col+1, row).value();
+                if (x == y) {
+                    return true;
+                }
+            }
+        }
+
+        // Check for combo moves in vertical direction
+        for (int row = 0; row < size-1; row += 1) {
+            for (int col = 0; col < size; col += 1) {
+                int x = b.tile(col, row).value();
+                int y = b.tile(col, row+1).value();
+                if (x == y) {
+                    return true;
+                }
+            }
+        }
+        // Else no moves
         return false;
     }
 
