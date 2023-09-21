@@ -30,6 +30,14 @@ public class BuggyAList<Item> {
         for (int i = 0; i < size; i += 1) {
             a[i] = items[i];
         }
+        // capacity for a is 8
+        // a can hold 8 items from 0 to 7
+        // for loop goes from 0 to 6
+
+        // capacity for a is 1
+        // therefore a can only hold 1 item at index 0
+        // for loop goes from 0 to 6 (size - 1)
+        // once a[i] hits a[1], index out of bounds
         items = a;
     }
 
@@ -60,7 +68,7 @@ public class BuggyAList<Item> {
       * returns deleted item. */
     public Item removeLast() {
         if ((size < items.length / 4) && (size > 4)) {
-            resize(size / 4);
+            resize(items.length / 4);
         }
         Item x = getLast();
         items[size - 1] = null;
