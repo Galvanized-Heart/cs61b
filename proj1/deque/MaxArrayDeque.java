@@ -1,10 +1,9 @@
 package deque;
 
-import net.sf.saxon.functions.Minimax;
-
+import java.util.Iterator;
 import java.util.Comparator;
 
-public class MaxArrayDeque<T> extends ArrayDeque<T> {
+public class MaxArrayDeque<T> extends ArrayDeque<T> implements Iterable<T> {
     private Comparator<T> comp;
 
     // Constructs a MaxArrayDeque with a given comparator
