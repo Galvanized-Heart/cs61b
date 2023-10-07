@@ -5,7 +5,7 @@ import java.io.File;
 import static capers.Utils.*;
 
 /** Canine Capers: A Gitlet Prelude.
- * @author TODO
+ * @author Maxim Kirby
 */
 public class Main {
     /**
@@ -21,6 +21,9 @@ public class Main {
      *
      * birthday [name] -- Advances a dog's age persistently
      *                    and prints out a celebratory message.
+     *
+     * reset -- Deletes persistent files so the next run can
+     *          print out new story, new dogs, new birthday, etc.
      *
      * All persistent data should be stored in a ".capers"
      * directory in the current working directory.
@@ -40,7 +43,6 @@ public class Main {
         if (args.length == 0) {
             Utils.exitWithError("Must have at least one argument");
         }
-
         CapersRepository.setupPersistence();
         String text;
         switch (args[0]) {
@@ -52,11 +54,19 @@ public class Main {
             break;
         case "dog":
             validateNumArgs("dog", args, 4);
-            // TODO: make a dog
+            String d_name = args[1];
+            String breed = args[2];
+            int age = Integer.parseInt(args[3]);
+            CapersRepository.makeDog(d_name, breed, age);
             break;
         case "birthday":
             validateNumArgs("birthday", args, 2);
-            // TODO: celebrate this dog's birthday
+            String b_name = args[1];
+            CapersRepository.celebrateBirthday(b_name);
+            break;
+        case "reset":
+            validateNumArgs("reset", args, 1);
+            CapersRepository.reset();
             break;
         default:
             exitWithError(String.format("Unknown command: %s", args[0]));
