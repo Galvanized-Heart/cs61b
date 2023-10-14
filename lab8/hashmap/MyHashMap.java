@@ -3,6 +3,9 @@ package hashmap;
 import afu.org.checkerframework.checker.oigj.qual.O;
 
 import java.util.*;
+import java.util.Collection;
+import java.util.Set;
+import java.util.Iterator;
 
 
 /**
@@ -107,7 +110,7 @@ public class MyHashMap<K, V> implements Map61B<K, V> {
 
     /***********************************************************************************/
 
-    /** Removes all of the mappings from this map. */
+    /** Removes all the mappings from this map. */
     @Override
     public void clear() {
         num_items = 0;
