@@ -2,6 +2,8 @@ package gitlet;
 
 import java.io.File;
 
+// THIS IS USED FOR LOOKING AT SERIALIZED FILES FOR DEBUGGING PURPOSES
+
 /** A debugging class whose main program may be invoked as follows:
  *      java gitlet.DumpObj FILE...
  *  where each FILE is a file produced by Utils.writeObject (or any file
