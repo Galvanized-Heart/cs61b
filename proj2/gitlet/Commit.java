@@ -1,9 +1,9 @@
 package gitlet;
 
-// TODO: any imports you need here
-
+import java.io.File;
 import java.io.Serializable;
-import java.util.Date; // TODO: You'll likely use this in this class
+import java.util.Date;
+import java.util.HashMap;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -33,33 +33,59 @@ import java.util.Date; // TODO: You'll likely use this in this class
 
 
 public class Commit implements Serializable {
-    /**
-     * TODO: add instance variables here.
-     *
-     * List all instance variables of the Commit class here with a useful
-     * comment above them describing what that variable represents and how that
-     * variable is used. We've provided one example for `message`.
-     */
 
-    /** The message of this Commit. */
+    /** SHA-1 IDs for this Commit */
+    private String id;
+
+    /** Metadata for Commit */
     private String message;
-
-    /** Timestamps */
     private String timestamp;
 
-    /** Parent commit */
-    private Commit parent;
+    /** SHA-1 ID for each parent Commit */
+    private HashMap<String, Object> parent;
 
-    /* TODO: fill in the rest of this class. */
+    /** List of SHA-1 ID for each file version Blob in Commit */
+    private HashMap<String, Object> files;
 
-    // Constructor
-    public Commit(String message, Commit parent) {
+    /**
 
+    /** Constructor */
+    public Commit(String m, HashMap<String, Object> p, HashMap<String, Object> f) {
+        message = m;
+        timestamp = new Date().toString();
+        parent = p;
+        files = f;
+
+        id = Utils.sha1(message+parent+timestamp);
+        System.out.println("Commit constructed: "+ id);
     }
 
-    // getMessage()
+    /** Returns String of Commit's SHA-1 ID */
+    public String getId() {
+        return id;
+    }
 
-    // getTimestamp()
+    /** Returns String of Commit's message */
+    public String getMessage() {
+        return message;
+    }
 
-    // getParent()
+    /** Returns String of Commit's timestamp */
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    /** Returns String of Commit parent's SHA-1 ID */
+    public HashMap<String, Object> getParent() {
+        return parent;
+    }
+
+    /** Returns HashMap of Strings of Commit blob(s)'s SHA-1 ID */
+    public HashMap<String, Object> getFiles() {
+        return files;
+    }
+
+    // addBlobToFiles(String sha, Object obj)
+
+    // removeBlobFromFiles(String sha_blob)
 }

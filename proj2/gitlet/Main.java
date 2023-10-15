@@ -9,75 +9,67 @@ import java.io.File;
  */
 public class Main {
 
-    // Branches? Here we need to init a master branch and have it point to initial commit
-    // What is UID? User ID
-
-
-
     /** Usage: java gitlet.Main ARGS, where ARGS contains
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
+        boolean repoExists = Repository.GITLET_DIR.exists();
         if (args.length == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
         String firstArg = args[0];
 
-        // "Incorrect operands." System.exit(0) if incorrect number of args passed to case
-
-        // "Not in an initialized Gitlet directory." System.exit(0) if commands requires
-        // .gitlet directory
         switch(firstArg) {
             case "init":
-                // TODO: handle the `init` command
                 validateNumArgs(args, 1);
-                break;
+                if (!repoExists) {
+                    Repository.initialize();
+                    return;
+                }
+                System.out.println("A Gitlet version-control system already exists in the current directory.");
+                System.exit(0);
             case "add":
                 // TODO: handle the `add [filename]` command
                 validateNumArgs(args, 2);
-                break;
+                if (repoExists) {
+                    Repository.add(args[1]);
+                    return;
+                }
+                System.out.println("Not in an initialized Gitlet directory.");
+                System.exit(0);
             case "commit":
-                break;
+                return;
             case "rm":
-                break;
+                return;
             case "log":
-                break;
+                return;
             case "global-log":
-                break;
+                return;
             case "find":
-                break;
+                return;
             case "status":
-                break;
-            case "checkout":
-                break;
+                return;
+            case "checkout": // no checkout?? See EDITED 3/5
+                return;
             case "branch":
-                break;
+                return;
             case "rm-branch":
-                break;
+                return;
             case "reset":
-                break;
+                return;
             case "merge":
-                break;
+                return;
+            // push & pull are extra credit
         }
         System.out.println("No command with that name exists.");
         System.exit(0);
-        // "No command with that name exists." System.exit(0)
     }
 
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            System.out.println("Invalid operands.");
+            System.out.println("Incorrect operands."); // also has to be done for incorrect formatting of operands
             System.exit(0);
         }
-    }
-
-
-    // Have this in another files (helpers.java?)
-    public void init() {
-        // Get current working directory
-        File cwd = new File(System.getProperty("user.dir"));
-        Commit initial = new Commit("initial commit", null);
-        return;
     }
 }
