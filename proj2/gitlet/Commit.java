@@ -3,7 +3,7 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.TreeSet;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -42,19 +42,20 @@ public class Commit implements Serializable {
     private String timestamp;
 
     /** SHA-1 ID for each parent Commit */
-    private HashMap<String, Object> parent;
+    private String parent;
 
     /** List of SHA-1 ID for each file version Blob in Commit */
-    private HashMap<String, Object> files;
+    private TreeSet<String> files;
+    // this might have to be made into a Tree for lg(N) runtime.
+    // not sure because commit says size of .gitlet matters.
 
     /**
 
     /** Constructor */
-    public Commit(String m, HashMap<String, Object> p, HashMap<String, Object> f) {
+    public Commit(String m, String p) {
         message = m;
         timestamp = new Date().toString();
         parent = p;
-        files = f;
 
         id = Utils.sha1(message+parent+timestamp);
         System.out.println("Commit constructed: "+ id);
@@ -76,16 +77,22 @@ public class Commit implements Serializable {
     }
 
     /** Returns String of Commit parent's SHA-1 ID */
-    public HashMap<String, Object> getParent() {
+    public String getParent() {
         return parent;
     }
 
     /** Returns HashMap of Strings of Commit blob(s)'s SHA-1 ID */
-    public HashMap<String, Object> getFiles() {
+    public TreeSet<String> getFiles() {
         return files;
     }
 
-    // addBlobToFiles(String sha, Object obj)
+    /** Adds Blob SHA-1 ID to Commit files. */
+    public void addBlobToFiles(String sha) {
+        files.add(sha);
+    }
 
-    // removeBlobFromFiles(String sha_blob)
+    /** Removes Blob SHA-1 ID to Commit files. */
+    public void removeBlobFromFiles(String sha) {
+        files.remove(sha);
+    }
 }

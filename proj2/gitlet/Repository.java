@@ -16,43 +16,20 @@ public class Repository {
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
+
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
+    /** Directories within .gitlet. */
     public static final File stage = join(GITLET_DIR, "stage");
     public static final File commits = join(GITLET_DIR, "commits");
     public static final File blobs = join(GITLET_DIR, "blobs");
+
+    /** File for repository within .gitlet */
     public static final File repository = join(GITLET_DIR, "repository");
 
 
     /***************************************************************************************************/
-
-
-    /** Returns Repository object if a Repository exists or one is being created */
-    public static Repo findRepo(boolean repoExists, boolean isInit) {
-        Repo repo = null;
-        if (repoExists && !isInit) {
-            File repo_path = Utils.join(Repository.GITLET_DIR, "repository");
-            if (repo_path.exists()) {
-                repo = Utils.readObject(repo_path, Repo.class);
-                System.out.println("Found repo!");
-            } else {
-                System.out.println("Could not find Gitlet repository.");
-                System.out.println("Try 'java gitlet.Main reset' and then 'java gitlet.Main init' to fix this issue.");
-                System.exit(0);
-            }
-        } else if (!repoExists && !isInit) {
-            repo = new Repo();
-            System.out.println("New repo created!");
-        } else if (repoExists && isInit) {
-            System.out.println("A Gitlet version-control system already exists in the current directory.");
-            System.exit(0);
-        } else {
-            System.out.println("Not in an initialized Gitlet directory.");
-            System.exit(0);
-        }
-        return repo;
-    }
 
 
     /**
@@ -69,7 +46,7 @@ public class Repository {
         blobs.mkdir();
 
         // Create initial commit
-        Commit initial = new Commit("initial commit", null, null);
+        Commit initial = new Commit("initial commit", null);
         File commit_0 = join(commits, initial.getId());
 
         // Create repo with hash for initial commit
@@ -99,14 +76,17 @@ public class Repository {
      *
      */
     public static void add(String f) {
-        if (!GITLET_DIR.exists()) {
-
+        if (!repository.exists()) {
+            System.out.println("What did you do to the repository? >:(");
         }
         File file = join(CWD, f);
         if (!file.exists()) {
-            System.out.println("Unable to retrieve file name: " + f);
+            System.out.println("File does not exist.");
             return;
         }
+        // Create blob and add to stage
+        // If blob2 has same hash as blob1 already on stage, do not stage it
+
 
     }
 }

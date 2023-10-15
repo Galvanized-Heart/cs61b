@@ -36,8 +36,7 @@ public class Main {
                     Repository.add(args[1]);
                     return;
                 }
-                System.out.println("Not in an initialized Gitlet directory.");
-                System.exit(0);
+                notInit();
             case "commit":
                 return;
             case "rm":
@@ -72,4 +71,10 @@ public class Main {
             System.exit(0);
         }
     }
+
+    public static void notInit() {
+        System.out.println("Not in an initialized Gitlet directory.");
+        System.exit(0);
+    }
 }
+
