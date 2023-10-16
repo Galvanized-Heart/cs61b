@@ -13,9 +13,9 @@ public class Repo implements Serializable {
     public String HEAD;
 
     /** Mapping of SHA-1 Strings to all other Objects required for Gitlet */
-    public HashMap<String, Object> references;
+    public HashMap<String, Object> references = new HashMap<String, Object>();
 
-
+    /***************************************************************************************************/
 
 
     /** Returns serialized object based on SHA-1 ID. */
