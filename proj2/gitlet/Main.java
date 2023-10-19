@@ -29,16 +29,23 @@ public class Main {
                 }
                 System.out.println("A Gitlet version-control system already exists in the current directory.");
                 System.exit(0);
+
             case "add":
-                // TODO: handle the `add [filename]` command
                 validateNumArgs(args, 2);
                 if (repoExists) {
                     Repository.add(args[1]);
                     return;
                 }
                 notInit();
+
             case "commit":
-                return;
+                validateNumArgs(args, 2);
+                if (repoExists) {
+                    Repository.commit(args[1]);
+                    return;
+                }
+                notInit();
+
             case "rm":
                 return;
             case "log":

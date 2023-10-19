@@ -2,8 +2,9 @@ package gitlet;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.TreeSet;
+import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -45,9 +46,7 @@ public class Commit implements Serializable {
     private String parent;
 
     /** List of SHA-1 ID for each file version Blob in Commit */
-    private TreeSet<String> files;
-    // this might have to be made into a Tree for lg(N) runtime.
-    // not sure because commit says size of .gitlet matters.
+    private ArrayList<String> files;
 
     /**
 
@@ -56,8 +55,7 @@ public class Commit implements Serializable {
         message = m;
         timestamp = new Date().toString();
         parent = p;
-
-        id = Utils.sha1(message+parent+timestamp);
+        id = sha1(message,parent,timestamp);
         System.out.println("Commit constructed: "+ id);
     }
 
@@ -82,7 +80,7 @@ public class Commit implements Serializable {
     }
 
     /** Returns HashMap of Strings of Commit blob(s)'s SHA-1 ID */
-    public TreeSet<String> getFiles() {
+    public ArrayList<String> getFiles() {
         return files;
     }
 
