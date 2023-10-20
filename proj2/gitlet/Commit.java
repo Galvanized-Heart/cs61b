@@ -45,13 +45,13 @@ public class Commit implements Serializable {
     public String timestamp;
 
     /** SHA-1 ID for each parent Commit. */
-    public HashMap<String, Commit> parent;
+    public String parent;
 
     /** Name:Blob in Commit. */
-    public TreeMap<String, Blob> files; // use blob.id to get sha from existant blobs
+    public TreeMap<String, String> files; // use blob.id to get sha from existant blobs
 
     /** Constructor. */
-    public Commit(String m, HashMap<String, Commit> p, TreeMap<String, Blob> f) {
+    public Commit(String m, String p, TreeMap<String, String> f) {
         message = m;
         timestamp = new Date().toString();
         parent = p;

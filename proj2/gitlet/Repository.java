@@ -1,7 +1,5 @@
 package gitlet;
 
-import edu.neu.ccs.gui.BooleanView;
-
 import java.io.File;
 import static gitlet.Utils.*;
 
@@ -33,27 +31,6 @@ public class Repository implements Serializable {
 
     /***************************************************************************************************/
 
-    /** Reference to head of the master and side branches */
-    public static String master; // use this for parent look up
-    public static String branch; // use this for branch loop up
-
-    /** Reference to current Commit */
-    public static String HEAD; // use this for checked out commit
-
-    /** Mapping of SHA-1 Strings to all other Objects required for Gitlet */
-    public static HashMap<String, Commit> commitConvert = new HashMap<>(); // Store all SHA:Commits
-    public static HashMap<String, Blob> blobsConvert = new HashMap<>(); // Store all SHA:Blobs
-
-    /** Name: SHA: Blob adding and removing on stage. */
-    public static TreeMap<String, String> add = new TreeMap<>(); // Store Name:SHA
-    public static TreeMap<String, String> rm = new TreeMap<>(); // Store Name:SHA
-
-    /** Tracks SHA-1 Strings of blobs from most recent commit */
-    public static HashSet<String> prevCommit = new HashSet<>();
-
-    /***************************************************************************************************/
-
-
     /**
      * Creates directory and files for Gitlet, initializes initial commit,
      * and sets master and HEAD pointers.
@@ -67,15 +44,15 @@ public class Repository implements Serializable {
         blobs.mkdir();
 
         // Create initial commit
-        Commit initial = new Commit("initial commit", null, null);
+        Commit initial = new Commit("initial commit", null, new TreeMap<>());
         File commit_path = join(commits, initial.id);
 
         // Create repo with hash for initial commit
         String commit_0_id = initial.id;
-        Repository repo = new Repository();
-        master = commit_0_id;
-        HEAD = commit_0_id;
-        commitConvert.put(commit_0_id, initial);
+        Repo repo = new Repo();
+        repo.master = commit_0_id;
+        repo.HEAD = commit_0_id;
+        repo.commitSearch.put(commit_0_id, initial); // add to look up
 
         // Create persistent files for initial commit and repo
         try {
@@ -95,6 +72,11 @@ public class Repository implements Serializable {
     /**
      * Adds a blob to the staging area based on the input file
      * gonna have to check the previous commit for new stage
+     *
+     * Bugs:
+     * 1. If an addition is made, a file of the same name but different contents creates
+     *    a new persistent blob.
+     * 2.
      */
     public static void add(String filename) {
         // Check if input files exists
@@ -113,53 +95,19 @@ public class Repository implements Serializable {
         // Attempt to add to stage
         repo.addToStage(blob);
 
-        // Check if stage has blob.name
-        boolean stageHasName = repo.add.containsKey(filename);
-        if (stageHasName) {
-            HashMap<String, Blob> addSha = repo.add.get(filename);
-            boolean stageHasSha = addSha.containsKey(blob.id);
-
-            // Check if stage has blob.id
-            if (!stageHasSha) {
-                Commit parent = repo.commits.get(repo.master); // O(1)
-                Blob parentFiles = parent.files.get(filename); // searching TreeMap takes O(lnN) time
-
-                // Check if parent commit has filename
-                boolean isInParentFiles = (parentFiles.name.equals(filename)); // O(?), probably insignificant
-                if (!isInParentFiles) {
-                    // Stage blob for addition
-                    HashMap<String, Blob> tmp2 = new HashMap<>();
-                    tmp2.put(blob.id, blob);
-                    repo.add.put(filename, tmp2);
-                }
-            }
+        // Create persistent files for initial commit and repo
+        File blob_path = join(blobs, blob.id);
+        try {
+            blob_path.createNewFile();
         }
-        else { // Stage doesn't have name
-            // Stage blob for addition
-            HashMap<String, Blob> tmp2 = new HashMap<>();
-            tmp2.put(blob.id, blob);
-            repo.add.put(filename, tmp2);
-        }
-
-
-        /** PUT THIS IN COMMIT SECTION TO UPDATE VALUE FIELD OF COMMIT WITH EXISTANT FILENAME
-        boolean isSameVersion = inquiry.id.equals(blob.id); // O(?), probably insignificant
-        if (!isSameVersion) {
-
-        }
-         */
-
-        // Check if blob version exists in previous commit O(1)
-        if (repo.stageHas(blob.getId())) {
-            // Remove blob from stage
-            repo.addTake(blob.getName(), blob.getId());
-        } else {
-            // Add blob to stage (overwrites if same file name)
-            repo.addPut(blob.getName(), blob.getId(), blob);
+        catch (Exception e){
+            System.err.println(e.getMessage());
         }
 
         // Save changes
+        writeObject(blob_path, blob);
         writeObject(repository, repo);
+
 
     }
 
@@ -178,16 +126,16 @@ public class Repository implements Serializable {
         Repo repo = readObject(repository, Repo.class);
 
         // Check if stage is empty
-        if (repo.stageIsEmpty()) {
+        boolean stageIsEmpty = (repo.add.isEmpty() && repo.rm.isEmpty());
+        if (stageIsEmpty) {
+            System.out.println(repo.add.toString());
+            System.out.println(repo.blobSearch.toString());
+
             System.out.println("No changes added to the commit.");
             System.exit(0);
         }
 
         // Create commit with blobs that commit should be tracking from parent commit (UID)
-        System.out.println(repo.master);
-        Commit parCommit = repo.commits.get(repo.master);
-        System.out.println(parCommit.files);
-        //Commit curCommit = new Commit(m, repo.master, parCommit.files);
         //curCommit.files.add(repo.blobs);
 
         // Update commit with staged items (UID)
@@ -209,10 +157,59 @@ public class Repository implements Serializable {
         // Don’t store redundant copies of versions of files that a commit receives from its parent
         // (hint: remember that blobs are content addressable and use the SHA1 to your advantage).
 
+        /** PUT THIS IN COMMIT SECTION TO UPDATE VALUE FIELD OF COMMIT WITH EXISTANT FILENAME
+         boolean isSameVersion = inquiry.id.equals(blob.id); // O(?), probably insignificant
+         if (!isSameVersion) {
+
+         }
+         */
+
         // Put in parent sha from master
+        Commit parCommit = repo.commitSearch.get(repo.master);
+        System.out.println(parCommit);
+
         // Copy files from parent commit to current commit
+        Commit curCommit = new Commit(m, repo.master, parCommit.files);
+
         // Add files from stage to current commit (overwrite blobs w/ same name in files)
+        for (var entry : repo.add.entrySet()) { // O(N)
+            curCommit.files.put(entry.getKey(), entry.getValue());
+        }
+        System.out.println(curCommit.files);
+
+
+        //curCommit.files.putAll(repo.add); // have to make sure curCommit.files is not null to use
+        //curCommit.files.put(repo.;)
+
         // Remove files from current commit (remove blobs w/ same name)
+        for (var entry : repo.rm.entrySet()) { // O(N)
+            curCommit.files.remove(entry.getKey());
+        }
+        System.out.println(curCommit.files);
+
+        // Update master ptr
+        repo.master = curCommit.id;
+
+
+
+        // Clear stage
+        repo.add = new TreeMap<>();
+
+        // Update prevCommit Set?
+
+
+        // Create persistent files for initial commit and repo
+        File commit_path = join(commits, curCommit.id);
+        try {
+            commit_path.createNewFile();
+        }
+        catch (Exception e){
+            System.err.println(e.getMessage());
+        }
+
+        // Save initial commit and repo
+        writeObject(commit_path, curCommit);
+        writeObject(repository, repo);
 
     }
 
