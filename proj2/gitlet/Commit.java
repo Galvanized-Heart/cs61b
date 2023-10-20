@@ -3,6 +3,8 @@ package gitlet;
 import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Date;
 import static gitlet.Utils.*;
 
@@ -35,62 +37,26 @@ import static gitlet.Utils.*;
 
 public class Commit implements Serializable {
 
-    /** SHA-1 IDs for this Commit */
-    private String id;
+    /** SHA-1 IDs for this Commit. */
+    public String id;
 
-    /** Metadata for Commit */
-    private String message;
-    private String timestamp;
+    /** Metadata for Commit. */
+    public String message;
+    public String timestamp;
 
-    /** SHA-1 ID for each parent Commit */
-    private String parent;
+    /** SHA-1 ID for each parent Commit. */
+    public HashMap<String, Commit> parent;
 
-    /** List of SHA-1 ID for each file version Blob in Commit */
-    private ArrayList<String> files;
+    /** Name:Blob in Commit. */
+    public TreeMap<String, Blob> files; // use blob.id to get sha from existant blobs
 
-    /**
-
-    /** Constructor */
-    public Commit(String m, String p) {
+    /** Constructor. */
+    public Commit(String m, HashMap<String, Commit> p, TreeMap<String, Blob> f) {
         message = m;
         timestamp = new Date().toString();
         parent = p;
-        id = sha1(message,parent,timestamp);
-        System.out.println("Commit constructed: "+ id);
-    }
-
-    /** Returns String of Commit's SHA-1 ID */
-    public String getId() {
-        return id;
-    }
-
-    /** Returns String of Commit's message */
-    public String getMessage() {
-        return message;
-    }
-
-    /** Returns String of Commit's timestamp */
-    public String getTimestamp() {
-        return timestamp;
-    }
-
-    /** Returns String of Commit parent's SHA-1 ID */
-    public String getParent() {
-        return parent;
-    }
-
-    /** Returns HashMap of Strings of Commit blob(s)'s SHA-1 ID */
-    public ArrayList<String> getFiles() {
-        return files;
-    }
-
-    /** Adds Blob SHA-1 ID to Commit files. */
-    public void addBlobToFiles(String sha) {
-        files.add(sha);
-    }
-
-    /** Removes Blob SHA-1 ID to Commit files. */
-    public void removeBlobFromFiles(String sha) {
-        files.remove(sha);
+        files = f;
+        id = sha1(message + parent + timestamp + files); // needs to include blob references too!
+        System.out.println("Commit constructed: " + id);
     }
 }

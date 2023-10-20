@@ -5,9 +5,9 @@ import java.io.Serializable;
 import static gitlet.Utils.*;
 
 public class Blob implements Serializable {
-    private String id;
-    private String name;
-    private byte[] content;
+    public String id;
+    public String name;
+    public byte[] content;
 
     public Blob(File f, String n) {
         name = n;
