@@ -115,25 +115,7 @@ public class Repository implements Serializable {
      * Creates new commit object with updated content from the staging area,
      * and resets staging area
      */
-    public static void commit(String m) {
-        // Check if message is empty
-        if (m.isEmpty()) {
-            System.out.println("Please enter a commit message.");
-            System.exit(0);
-        }
-
-        // Open current repo
-        Repo repo = readObject(repository, Repo.class);
-
-        // Check if stage is empty
-        boolean stageIsEmpty = (repo.add.isEmpty() && repo.rm.isEmpty());
-        if (stageIsEmpty) {
-            System.out.println(repo.add.toString());
-            System.out.println(repo.blobSearch.toString());
-
-            System.out.println("No changes added to the commit.");
-            System.exit(0);
-        }
+    public static void commit(String message) {
 
         // Create commit with blobs that commit should be tracking from parent commit (UID)
         //curCommit.files.add(repo.blobs);
@@ -164,12 +146,28 @@ public class Repository implements Serializable {
          }
          */
 
+        // Check if message is empty
+        if (message.isEmpty()) {
+            System.out.println("Please enter a commit message.");
+            System.exit(0);
+        }
+
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
+
+        // Check if stage is empty
+        boolean stageIsEmpty = (repo.add.isEmpty() && repo.rm.isEmpty());
+        if (stageIsEmpty) {
+            System.out.println("No changes added to the commit.");
+            System.exit(0);
+        }
+
         // Put in parent sha from master
-        Commit parCommit = repo.commitSearch.get(repo.master);
+        Commit parCommit = repo.commitSearch.get(repo.HEAD);
         System.out.println(parCommit);
 
         // Copy files from parent commit to current commit
-        Commit curCommit = new Commit(m, repo.master, parCommit.files);
+        Commit curCommit = new Commit(message, repo.master, parCommit.files);
 
         // Add files from stage to current commit (overwrite blobs w/ same name in files)
         for (var entry : repo.add.entrySet()) { // O(N)
@@ -182,12 +180,12 @@ public class Repository implements Serializable {
         //curCommit.files.put(repo.;)
 
         // Remove files from current commit (remove blobs w/ same name)
-        for (var entry : repo.rm.entrySet()) { // O(N)
-            curCommit.files.remove(entry.getKey());
+        for (int i = 0; i < repo.rm.size(); i++) { // O(N)
+            curCommit.files.remove(repo.rm.get(i));
         }
         System.out.println(curCommit.files);
 
-        // Update master ptr
+        // Update master pointer
         repo.master = curCommit.id;
 
 
@@ -213,14 +211,31 @@ public class Repository implements Serializable {
 
     }
 
-    public static void rm(String f) {
-        // unstage file if it is staged for addition
-        // if file is in current commit, stage for removal and remove from CWD
+    public static void rm(String filename) {
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
 
-        // rm needs to search for blob by file name
-            // cannot make a new blob and compare it
-            // could try accessing repo.master (to get current commit)
-            //
+        // Check if file is staged for addition
+        if (repo.add.containsKey(filename)) {
+            // Remove from staged additions
+            repo.add.remove(filename);
+        }
+
+        // Check if file is in current commit
+        else if (repo.commitSearch.get(repo.HEAD).files.containsKey(filename)) {
+            // Add to staged removals
+            repo.rm.add(filename);
+
+            // Delete said file if it exists
+            File file = join(CWD, filename);
+            if (file.exists()) {
+                restrictedDelete(file);
+            }
+        }
+
+        else {
+            System.out.println("No reason to remove the file.");
+        }
     }
 
     public static void test() {

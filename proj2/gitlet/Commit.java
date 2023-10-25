@@ -37,18 +37,18 @@ import static gitlet.Utils.*;
 
 public class Commit implements Serializable {
 
-    /** SHA-1 IDs for this Commit. */
+    /** SHAs for this Commit. */
     public String id;
 
     /** Metadata for Commit. */
     public String message;
     public String timestamp;
 
-    /** SHA-1 ID for each parent Commit. */
+    /** SHA for each parent Commit. */
     public String parent;
 
-    /** Name:Blob in Commit. */
-    public TreeMap<String, String> files; // use blob.id to get sha from existant blobs
+    /** Name:SHA in Commit. */
+    public TreeMap<String, String> files;
 
     /** Constructor. */
     public Commit(String m, String p, TreeMap<String, String> f) {

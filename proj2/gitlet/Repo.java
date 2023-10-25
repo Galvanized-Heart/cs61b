@@ -1,6 +1,7 @@
 package gitlet;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeMap;
@@ -25,13 +26,13 @@ public class Repo implements Serializable {
     public HashMap<String, Blob> blobSearch = new HashMap<>(); // Store all SHA:Blobs
 
     /**
-     * Name: SHA: Blob adding and removing on stage.
+     * Name:SHA adding and removing on stage.
      */
     public TreeMap<String, String> add = new TreeMap<>(); // Store Name:SHA
-    public TreeMap<String, String> rm = new TreeMap<>(); // Store Name:SHA
+    public ArrayList<String> rm = new ArrayList<>(); // Store Name
 
     /**
-     * Tracks SHA-1 Strings of blobs from most recent commit
+     * Tracks SHA-1 Strings of blobs from most recent commit (might be deprecated)
      */
     public HashSet<String> prevCommit = new HashSet<>();
 
@@ -106,8 +107,6 @@ public class Repo implements Serializable {
             add.put(b.name, b.id);
             blobSearch.put(b.name, b);
         }
-
-
         /** ^^^ THIS SECTION COULD BE REFACTORED! ^^^ */
     }
 }
