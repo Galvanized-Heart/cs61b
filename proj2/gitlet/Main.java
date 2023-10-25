@@ -55,7 +55,13 @@ public class Main {
                 notInit();
 
             case "log":
-                return;
+                validateNumArgs(args, 1);
+                if (repoExists) {
+                    Repository.log();
+                    return;
+                }
+                notInit();
+
             case "global-log":
                 return;
             case "find":
@@ -73,10 +79,6 @@ public class Main {
             case "merge":
                 return;
             // push & pull are extra credit
-
-            case "test":
-                Repository.test();
-                return;
         }
         System.out.println("No command with that name exists.");
         System.exit(0);

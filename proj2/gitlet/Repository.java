@@ -4,6 +4,7 @@ import java.io.File;
 import static gitlet.Utils.*;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.TreeMap;
@@ -34,7 +35,7 @@ public class Repository implements Serializable {
     /**
      * Creates directory and files for Gitlet, initializes initial commit,
      * and sets master and HEAD pointers.
-     * */
+     */
     public static void initialize() {
         // Create hidden .gitlet directory
         GITLET_DIR.mkdir();
@@ -71,12 +72,11 @@ public class Repository implements Serializable {
 
     /**
      * Adds a blob to the staging area based on the input file
-     * gonna have to check the previous commit for new stage
      *
-     * Bugs:
-     * 1. If an addition is made, a file of the same name but different contents creates
-     *    a new persistent blob.
-     * 2.
+     * IT WOULD BE IDEAL IF WHEN YOU UPDATED A FILE IN THE ADD
+     * STAGE IT DELETES THE OLD PERSISTENT FILE!!!
+     *
+     * BLOBSEARCH() NEEDS TO BE UPDATED SOMEWHERE!!!
      */
     public static void add(String filename) {
         // Check if input files exists
@@ -86,29 +86,57 @@ public class Repository implements Serializable {
             return;
         }
 
-        // Create new blob
-        Blob blob = new Blob(file, filename);
-
         // Open current repo
         Repo repo = readObject(repository, Repo.class);
 
-        // Attempt to add to stage
-        repo.addToStage(blob);
+        // Create new blob
+        Blob blob = new Blob(file, filename);
 
-        // Create persistent files for initial commit and repo
+        // Checking components
+        Commit currentCommit = repo.commitSearch.get(repo.HEAD);
+        String currentFileId = currentCommit.files.get(filename);
+        String stagedFileId = repo.add.get(filename);
+        String sha = null;
+
+        // Check if file is in current commit
+        if (currentFileId != null) {
+            sha = currentFileId;
+        }
+
+        // Check if file is staged for addition
+        else if (stagedFileId != null) {
+            sha = stagedFileId;
+            // Trigger for deleting old blob?
+        }
+
+        // Check if file is a different version of filename
+        if (!blob.id.equals(sha)) {
+            // Stage file for addition
+            repo.add.put(filename, blob.id);
+
+            // Add to blobSearch? Where else?
+        }
+        else {
+            // Remove file from addition stage
+            repo.add.remove(filename);
+        }
+
+        // Create new blob if it doesn't already exist
         File blob_path = join(blobs, blob.id);
-        try {
-            blob_path.createNewFile();
-        }
-        catch (Exception e){
-            System.err.println(e.getMessage());
+        if (!blob_path.exists()) {
+            try {
+                blob_path.createNewFile();
+            }
+            catch (Exception e){
+                System.err.println(e.getMessage());
+            }
+
+            // Save new blob
+            writeObject(blob_path, blob);
         }
 
-        // Save changes
-        writeObject(blob_path, blob);
+        // Save changes to repo
         writeObject(repository, repo);
-
-
     }
 
     /**
@@ -116,36 +144,6 @@ public class Repository implements Serializable {
      * and resets staging area
      */
     public static void commit(String message) {
-
-        // Create commit with blobs that commit should be tracking from parent commit (UID)
-        //curCommit.files.add(repo.blobs);
-
-        // Update commit with staged items (UID)
-
-
-        // The bottom line: By default a commit has the same file contents as its
-        // parent. Files staged for addition and removal are the updates to the
-        // commit. Of course, the date (and likely the message) will also different
-        // from the parent.
-
-        // Commit will have same files as parents by default.
-        // Commit will only update contents of files it is tracking that have been staged for addition.
-        // Commit will save/track files that were staged for addition but weren't tracked by parent.
-        // New commit may untrack files from prev commit that were stages for removal.
-
-        // Stage is cleared after commit is created.
-        // Move master and HEAD pointers to this newly made commit.
-
-        // Don’t store redundant copies of versions of files that a commit receives from its parent
-        // (hint: remember that blobs are content addressable and use the SHA1 to your advantage).
-
-        /** PUT THIS IN COMMIT SECTION TO UPDATE VALUE FIELD OF COMMIT WITH EXISTANT FILENAME
-         boolean isSameVersion = inquiry.id.equals(blob.id); // O(?), probably insignificant
-         if (!isSameVersion) {
-
-         }
-         */
-
         // Check if message is empty
         if (message.isEmpty()) {
             System.out.println("Please enter a commit message.");
@@ -162,42 +160,31 @@ public class Repository implements Serializable {
             System.exit(0);
         }
 
-        // Put in parent sha from master
-        Commit parCommit = repo.commitSearch.get(repo.HEAD);
-        System.out.println(parCommit);
+        // Fetch current commit and create new commit
+        Commit currentCommit = repo.commitSearch.get(repo.HEAD);
+        Commit newCommit = new Commit(message, repo.master, currentCommit.files);
 
-        // Copy files from parent commit to current commit
-        Commit curCommit = new Commit(message, repo.master, parCommit.files);
+        // Check if files exists
+        if (newCommit.files != null) {
+            // Add files that are staged for addition to new commit
+            // (overwrites blobs w/ same name in files)
+            newCommit.files.putAll(repo.add);
 
-        // Add files from stage to current commit (overwrite blobs w/ same name in files)
-        for (var entry : repo.add.entrySet()) { // O(N)
-            curCommit.files.put(entry.getKey(), entry.getValue());
+            // Remove files from new commit that are staged for removal
+            for (int i = 0; i < repo.rm.size(); i++) {
+                newCommit.files.remove(repo.rm.get(i));
+            }
         }
-        System.out.println(curCommit.files);
-
-
-        //curCommit.files.putAll(repo.add); // have to make sure curCommit.files is not null to use
-        //curCommit.files.put(repo.;)
-
-        // Remove files from current commit (remove blobs w/ same name)
-        for (int i = 0; i < repo.rm.size(); i++) { // O(N)
-            curCommit.files.remove(repo.rm.get(i));
-        }
-        System.out.println(curCommit.files);
 
         // Update master pointer
-        repo.master = curCommit.id;
-
-
+        repo.master = newCommit.id;
 
         // Clear stage
         repo.add = new TreeMap<>();
-
-        // Update prevCommit Set?
-
+        repo.rm = new ArrayList<>();
 
         // Create persistent files for initial commit and repo
-        File commit_path = join(commits, curCommit.id);
+        File commit_path = join(commits, newCommit.id);
         try {
             commit_path.createNewFile();
         }
@@ -206,9 +193,8 @@ public class Repository implements Serializable {
         }
 
         // Save initial commit and repo
-        writeObject(commit_path, curCommit);
+        writeObject(commit_path, newCommit);
         writeObject(repository, repo);
-
     }
 
     public static void rm(String filename) {
@@ -223,7 +209,7 @@ public class Repository implements Serializable {
 
         // Check if file is in current commit
         else if (repo.commitSearch.get(repo.HEAD).files.containsKey(filename)) {
-            // Add to staged removals
+            // Stage file for removal
             repo.rm.add(filename);
 
             // Delete said file if it exists
@@ -238,8 +224,7 @@ public class Repository implements Serializable {
         }
     }
 
-    public static void test() {
-        File f = join(CWD, "code.txt");
-        System.out.println();
+    public static void log() {
+        return;
     }
 }
