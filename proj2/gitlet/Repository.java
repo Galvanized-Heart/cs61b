@@ -4,10 +4,7 @@ import java.io.File;
 import static gitlet.Utils.*;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.TreeMap;
+import java.util.*;
 
 /** Represents a gitlet repository.
  *  TODO: It's a good idea to give a description here of what else this Class
@@ -120,16 +117,16 @@ public class Repository implements Serializable {
 
         // Delete old blob if overwriting stage
         if (stagedFileId != null) {
-            File old_blob_path = join(blobs, stagedFileId);
-            old_blob_path.delete();
+            File oldBlobPath = join(blobs, stagedFileId);
+            oldBlobPath.delete();
             repo.blobSearch.remove(stagedFileId);
         }
 
         // Create new blob if it doesn't already exist
-        File blob_path = join(blobs, blob.id);
-        if (!blob_path.exists()) {
+        File blobPath = join(blobs, blob.id);
+        if (!blobPath.exists()) {
             try {
-                blob_path.createNewFile();
+                blobPath.createNewFile();
                 repo.blobSearch.put(blob.id, blob);
             }
             catch (Exception e){
@@ -137,7 +134,7 @@ public class Repository implements Serializable {
             }
 
             // Save new blob
-            writeObject(blob_path, blob);
+            writeObject(blobPath, blob);
         }
 
         // Save changes to repo
@@ -179,12 +176,15 @@ public class Repository implements Serializable {
             for (int i = 0; i < repo.rm.size(); i++) {
                 newCommit.files.remove(repo.rm.get(i));
             }
+            repo.commitSearch.put(newCommit.id, newCommit);
         }
 
-        // Update master pointer
+        // Update HEAD and master pointers
         repo.master = newCommit.id;
+        repo.HEAD = newCommit.id;
+        System.out.println("HEAD AND MASTER: "+repo.HEAD + " " + repo.master);
 
-        // Clear stage
+                // Clear stage
         repo.add = new TreeMap<>();
         repo.rm = new ArrayList<>();
 
@@ -230,6 +230,74 @@ public class Repository implements Serializable {
     }
 
     public static void log() {
-        return;
+        /**
+         * Starting at the current HEAD commit, display information
+         * about each commit backwards along the commit tree until
+         * the initial commit, following the first parent commit links.
+         * (ignore any second parents found in merge commits)
+         *
+         * java.util.Date and java.util.Formatter are useful
+         * for getting and formatting times.
+         *
+         * """
+         * ===
+         * commit a0da1ea5a15ab613bf9961fd86f010cf74c7ee48
+         * Date: Thu Nov 9 20:00:05 2017 -0800
+         * A commit message.
+         *
+         * ===
+         * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
+         * Date: Thu Nov 9 17:01:33 2017 -0800
+         * Another commit message.
+         *
+         * """
+         *
+         * (!!! COME BACK TO THIS PART !!!)
+         * For merge commits (those that have two parent commits),
+         * add a line just below the first that had the first 7 digits
+         * of each parents' id.
+         *
+         * """
+         * ===
+         * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
+         * Merge: 4975af1 2c1ead1
+         * Date: Sat Nov 11 12:30:00 2017 -0800
+         * Merged development into master.
+         *
+         * """
+         *
+         * The first parent is the branch you were on when you did
+         * the merge; the second is that of the merged-in branch.
+         */
+
+        // recursion for commits+metadata
+        Repo repo = readObject(repository, Repo.class);
+        Commit c = repo.commitSearch.get(repo.HEAD);
+        printCommitTree(repo, c);
+    }
+
+    private static void printCommitTree(Repo repo, Commit c) {
+
+        if (c == null) {
+            return;
+        }
+
+        System.out.println("===");
+        System.out.println("commit "+c.id);
+        // if (isMerge) { // Figure this out when you understand merge
+        // System.out.println("Merge: "+
+        //                    c.parent_1 (first 7 digits) +
+        //                    " " +
+        //                    c.parent_2 (first 7 digits)
+        // }
+        System.out.println("Date: "+c.timestamp);
+        System.out.println(c.message+"\n");
+
+        printCommitTree(repo, repo.commitSearch.get(c.parent));
+    }
+
+    public static void global_log() {
+        // Get all commits in .gitlet
+        List<String> commitList = plainFilenamesIn(commits);
     }
 }
