@@ -16,11 +16,7 @@ public class Blob implements Serializable {
         System.out.println("Blob constructed: " + id);
     }
 
-    public String getId() {
-        return id;
-    }
+    // deleteBlob(sha)
 
-    public String getName() {
-        return name;
-    }
+
 }

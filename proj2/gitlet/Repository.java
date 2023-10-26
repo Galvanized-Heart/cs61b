@@ -72,11 +72,6 @@ public class Repository implements Serializable {
 
     /**
      * Adds a blob to the staging area based on the input file
-     *
-     * IT WOULD BE IDEAL IF WHEN YOU UPDATED A FILE IN THE ADD
-     * STAGE IT DELETES THE OLD PERSISTENT FILE!!!
-     *
-     * BLOBSEARCH() NEEDS TO BE UPDATED SOMEWHERE!!!
      */
     public static void add(String filename) {
         // Check if input files exists
@@ -97,6 +92,7 @@ public class Repository implements Serializable {
         String currentFileId = currentCommit.files.get(filename);
         String stagedFileId = repo.add.get(filename);
         String sha = null;
+        boolean overwrite = false;
 
         // Check if file is in current commit
         if (currentFileId != null) {
@@ -106,19 +102,27 @@ public class Repository implements Serializable {
         // Check if file is staged for addition
         else if (stagedFileId != null) {
             sha = stagedFileId;
-            // Trigger for deleting old blob?
+            overwrite = true;
         }
 
         // Check if file is a different version of filename
         if (!blob.id.equals(sha)) {
             // Stage file for addition
             repo.add.put(filename, blob.id);
-
-            // Add to blobSearch? Where else?
+            repo.blobSearch.put(blob.id, blob);
         }
-        else {
+
+        // Check if file is same version and is in current commit
+        else if (sha.equals(currentFileId)) {
             // Remove file from addition stage
             repo.add.remove(filename);
+        }
+
+        // Delete old blob if overwriting stage
+        if (stagedFileId != null) {
+            File old_blob_path = join(blobs, stagedFileId);
+            old_blob_path.delete();
+            repo.blobSearch.remove(stagedFileId);
         }
 
         // Create new blob if it doesn't already exist
@@ -126,6 +130,7 @@ public class Repository implements Serializable {
         if (!blob_path.exists()) {
             try {
                 blob_path.createNewFile();
+                repo.blobSearch.put(blob.id, blob);
             }
             catch (Exception e){
                 System.err.println(e.getMessage());
@@ -215,7 +220,7 @@ public class Repository implements Serializable {
             // Delete said file if it exists
             File file = join(CWD, filename);
             if (file.exists()) {
-                restrictedDelete(file);
+                file.delete();
             }
         }
 
