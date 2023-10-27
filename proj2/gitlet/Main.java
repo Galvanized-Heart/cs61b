@@ -63,7 +63,13 @@ public class Main {
                 notInit();
 
             case "global-log":
-                return;
+                validateNumArgs(args, 1);
+                if (repoExists) {
+                    Repository.global_log();
+                    return;
+                }
+                notInit();
+
             case "find":
                 return;
             case "status":

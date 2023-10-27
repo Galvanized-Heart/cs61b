@@ -69,6 +69,8 @@ public class Repository implements Serializable {
 
     /**
      * Adds a blob to the staging area based on the input file
+     *
+     * IS IT REDUNDANT TO SAVE BLOBS TO REPO AND TO PERSISTENT FILES?
      */
     public static void add(String filename) {
         // Check if input files exists
@@ -282,22 +284,37 @@ public class Repository implements Serializable {
             return;
         }
 
+        printCommit(c);
+
+        printCommitTree(repo, repo.commitSearch.get(c.parent));
+    }
+
+    private static void printCommit(Commit c) {
         System.out.println("===");
         System.out.println("commit "+c.id);
         // if (isMerge) { // Figure this out when you understand merge
         // System.out.println("Merge: "+
-        //                    c.parent_1 (first 7 digits) +
+        //                    c.parent_1.substring(0, 7) +
         //                    " " +
-        //                    c.parent_2 (first 7 digits)
+        //                    c.parent_2.substring(0, 7)
         // }
         System.out.println("Date: "+c.timestamp);
         System.out.println(c.message+"\n");
-
-        printCommitTree(repo, repo.commitSearch.get(c.parent));
     }
 
     public static void global_log() {
         // Get all commits in .gitlet
         List<String> commitList = plainFilenamesIn(commits);
+        Repo repo = readObject(repository, Repo.class);
+        if (commitList != null) {
+            for (String str : commitList) {
+                Commit c = repo.commitSearch.get(str);
+                printCommit(c);
+            }
+        }
+        else {
+            System.out.println("Found no commit with that message.");
+            System.exit(0);
+        }
     }
 }
