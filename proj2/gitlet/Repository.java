@@ -231,29 +231,12 @@ public class Repository implements Serializable {
         }
     }
 
+    /**
+     * Prints out all commits on the current branch starting from the HEAD pointer.
+     * STILL NEED TO DO WORK FOR THE MERGE COMMIT PRINTING!
+     */
     public static void log() {
         /**
-         * Starting at the current HEAD commit, display information
-         * about each commit backwards along the commit tree until
-         * the initial commit, following the first parent commit links.
-         * (ignore any second parents found in merge commits)
-         *
-         * java.util.Date and java.util.Formatter are useful
-         * for getting and formatting times.
-         *
-         * """
-         * ===
-         * commit a0da1ea5a15ab613bf9961fd86f010cf74c7ee48
-         * Date: Thu Nov 9 20:00:05 2017 -0800
-         * A commit message.
-         *
-         * ===
-         * commit 3e8bf1d794ca2e9ef8a4007275acf3751c7170ff
-         * Date: Thu Nov 9 17:01:33 2017 -0800
-         * Another commit message.
-         *
-         * """
-         *
          * (!!! COME BACK TO THIS PART !!!)
          * For merge commits (those that have two parent commits),
          * add a line just below the first that had the first 7 digits
@@ -272,23 +255,21 @@ public class Repository implements Serializable {
          * the merge; the second is that of the merged-in branch.
          */
 
-        // recursion for commits+metadata
         Repo repo = readObject(repository, Repo.class);
         Commit c = repo.commitSearch.get(repo.HEAD);
         printCommitTree(repo, c);
     }
 
+    // Recursively prints commits+metadata
     private static void printCommitTree(Repo repo, Commit c) {
-
         if (c == null) {
             return;
         }
-
         printCommit(c);
-
         printCommitTree(repo, repo.commitSearch.get(c.parent));
     }
 
+    // Prints commit+metadata
     private static void printCommit(Commit c) {
         System.out.println("===");
         System.out.println("commit "+c.id);
@@ -302,8 +283,8 @@ public class Repository implements Serializable {
         System.out.println(c.message+"\n");
     }
 
+    /** Prints out all commits saved to the .gitlet directory. */
     public static void global_log() {
-        // Get all commits in .gitlet
         List<String> commitList = plainFilenamesIn(commits);
         Repo repo = readObject(repository, Repo.class);
         if (commitList != null) {
@@ -317,4 +298,26 @@ public class Repository implements Serializable {
             System.exit(0);
         }
     }
+
+    /**
+     * Prints out all commits save to the .gitlet
+     * directory with the specified message.
+     * */
+    public static void find(String commitMessage) {
+        List<String> commitList = plainFilenamesIn(commits);
+        Repo repo = readObject(repository, Repo.class);
+        if (commitList != null) {
+            for (String str : commitList) {
+                Commit c = repo.commitSearch.get(str);
+                if (c.message.equals(commitMessage)) {
+                    printCommit(c);
+                }
+            }
+        }
+        else {
+            System.out.println("Found no commit with that message.");
+            System.exit(0);
+        }
+    }
+
 }

@@ -71,7 +71,13 @@ public class Main {
                 notInit();
 
             case "find":
-                return;
+                validateNumArgs(args, 2);
+                if (repoExists) {
+                    Repository.find(args[1]);
+                    return;
+                }
+                notInit();
+
             case "status":
                 return;
             case "checkout": // no checkout?? See EDITED 3/5
