@@ -1,6 +1,8 @@
 package gitlet;
 
 import java.io.File;
+
+import static gitlet.Utils.*;
 // maybe java.nio.file.Files
 // maybe java.io and java.nio have more useful stuff too?
 
@@ -18,6 +20,7 @@ public class Main {
             System.out.println("Please enter a command.");
             System.exit(0);
         }
+
         String firstArg = args[0];
 
         switch(firstArg) {
@@ -79,11 +82,44 @@ public class Main {
                 notInit();
 
             case "status":
-                return;
-            case "checkout": // no checkout?? See EDITED 3/5
-                return;
+                validateNumArgs(args, 1);
+                if (repoExists) {
+                    Repository.status();
+                    return;
+                }
+                notInit();
+
+            case "checkout":
+                // java gitlet.Main checkout -- [file name]
+
+                // java gitlet.Main checkout [commit id] -- [file name]
+
+                // java gitlet.Main checkout [branch name]
+
+                // validateNumArgs(args, 2);
+                if (repoExists) {
+                    if (args[1].equals("--")) {
+                        System.out.println("not here");
+                        Repository.checkout(args[2]);
+                    } else if (args[2].equals("--")) {
+                        System.out.println("here");
+                        Repository.checkout(args[3], args[1]);
+                    } else {
+                        Repository.checkoutBranch(args[1]);
+                    }
+                    return;
+                }
+                notInit();
+
             case "branch":
-                return;
+                // java gitlet.Main branch [branch name]
+                validateNumArgs(args, 2);
+                if (repoExists) {
+                    Repository.branch(args[1]);
+                    return;
+                }
+                notInit();
+
             case "rm-branch":
                 return;
             case "reset":
@@ -91,6 +127,9 @@ public class Main {
             case "merge":
                 return;
             // push & pull are extra credit
+            case "test":
+                Repository.test();
+                return;
         }
         System.out.println("No command with that name exists.");
         System.exit(0);

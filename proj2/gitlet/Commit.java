@@ -59,4 +59,10 @@ public class Commit implements Serializable {
         id = sha1(message + parent + timestamp + files); // needs to include blob references too!
         System.out.println("Commit constructed: " + id);
     }
+
+    @Override
+    public String toString() {
+        // String build: printCommit() from Repository.java
+        return "";
+    }
 }

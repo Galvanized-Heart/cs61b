@@ -2,8 +2,8 @@ package gitlet;
 
 import java.io.File;
 import static gitlet.Utils.*;
+import static java.util.Collections.sort;
 
-import java.io.Serializable;
 import java.util.*;
 
 /** Represents a gitlet repository.
@@ -12,7 +12,7 @@ import java.util.*;
  *
  *  @author Maxim Kirby
  */
-public class Repository implements Serializable {
+public class Repository {
 
     /** The current working directory. */
     public static final File CWD = new File(System.getProperty("user.dir"));
@@ -166,7 +166,10 @@ public class Repository implements Serializable {
 
         // Fetch current commit and create new commit
         Commit currentCommit = repo.commitSearch.get(repo.HEAD);
-        Commit newCommit = new Commit(message, repo.master, currentCommit.files);
+        TreeMap<String, String> copiedFiles = new TreeMap<>(currentCommit.files);
+        Commit newCommit = new Commit(message, repo.master, copiedFiles);
+        // I think this^ doesn't copy, but instead accesses commit_0.files and edits that
+        // since all the commits seem to have the same .files TreeMap
 
         // Check if files exists
         if (newCommit.files != null) {
@@ -186,7 +189,7 @@ public class Repository implements Serializable {
         repo.HEAD = newCommit.id;
         System.out.println("HEAD AND MASTER: "+repo.HEAD + " " + repo.master);
 
-                // Clear stage
+        // Clear stage
         repo.add = new TreeMap<>();
         repo.rm = new ArrayList<>();
 
@@ -229,6 +232,9 @@ public class Repository implements Serializable {
         else {
             System.out.println("No reason to remove the file.");
         }
+
+        // Save changes to repo
+        writeObject(repository, repo);
     }
 
     /**
@@ -269,7 +275,7 @@ public class Repository implements Serializable {
         printCommitTree(repo, repo.commitSearch.get(c.parent));
     }
 
-    // Prints commit+metadata
+    // Prints commit+metadata (make method of Commit)
     private static void printCommit(Commit c) {
         System.out.println("===");
         System.out.println("commit "+c.id);
@@ -302,7 +308,7 @@ public class Repository implements Serializable {
     /**
      * Prints out all commits save to the .gitlet
      * directory with the specified message.
-     * */
+     */
     public static void find(String commitMessage) {
         List<String> commitList = plainFilenamesIn(commits);
         Repo repo = readObject(repository, Repo.class);
@@ -318,6 +324,102 @@ public class Repository implements Serializable {
             System.out.println("Found no commit with that message.");
             System.exit(0);
         }
+    }
+
+    /** Prints info about current branch, staged, and removed files */
+    public static void status() {
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
+
+        System.out.println("=== Branches ===");
+        System.out.println("*master");
+        System.out.println("other-branch\n");
+
+        System.out.println("=== Staged Files ===");
+        for (String name : repo.add.keySet()) {
+            System.out.println(name);
+        }
+        System.out.println();
+
+
+        System.out.println("=== Removed Files ===");
+        Collections.sort(repo.rm);
+        for (String name : repo.rm) {
+            System.out.println(name);
+        }
+        System.out.println();
+    }
+
+    /** Checks out files from a designated commit
+     *
+     * STILL NEED TO SUPPORT CONCATENATED COMMIT IDs
+     * STILL NEED TO SUPPORT BRANCH CHANGES
+     */
+    public static void checkout(String filename) {
+        Repo repo = readObject(repository, Repo.class);
+        checkout(filename, repo.HEAD);
+    }
+
+    public static void checkout(String filename, String sha) {
+        // Fetch file path
+        File file = join(CWD, filename);
+
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
+
+        // Check if commit has file
+        Commit c = repo.commitSearch.get(sha);
+        if (c == null) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+
+        // Fetch file version as in commit
+        String fileVersion = c.files.get(filename);
+        System.out.println(sha);
+        System.out.println(c.files);
+
+        // Check if fileVersion exists in commit
+        if (fileVersion == null) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
+        }
+
+        // Writes file to CWD if fileVersion exists in commit
+        Blob b = repo.blobSearch.get(fileVersion);
+        writeContents(file, b.content);
+    }
+
+    public static void checkoutBranch(String branch) {
+        // Take files from head of commit of a branch
+        // Puts commit version of files in CWD overwriting current version of files (if they exist)
+        // Any files from current branch that are not in checked out branch are to be deleted
+        // If (checked-out branch != current branch) clear stage
+        // HEAD will be set to current branch
+
+        // Fetch files from either master or other-branch
+        // For each file in most front commit in that branch,
+            // write over fileVersion based on commit
+        // Delete any files from the current branch that are not in checked out branch
+            // Does this mean I have to compare the files in each branch?
+        // Clear the stage if branches were swapped and do not clear if you are in the same branch
+        // Update HEAD to current branch
+    }
+
+    public static void branch(String branchName) {
+
+    }
+
+    public static void test() {
+        Repo repo = readObject(repository, Repo.class);
+        Commit a = repo.commitSearch.get("dc9bc3c0ca408f37d6f5a55a97dc9e3bcb3d4698");
+        Commit b = repo.commitSearch.get("d8e9da5ac28ab575a32530adfa3486911ddd09d0");
+        Commit c = repo.commitSearch.get("1f10b8af725834ecd8cde3f76e40b3b67a2b064e");
+        Commit d = repo.commitSearch.get("03b49387ae251ab3c7569569a4ebb9503fa8b5d8");
+        System.out.println(a.files);
+        System.out.println(b.files);
+        System.out.println(c.files);
+        System.out.println(d.files);
     }
 
 }
