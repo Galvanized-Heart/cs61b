@@ -25,6 +25,8 @@ public class Main {
 
         switch(firstArg) {
             case "init":
+                // java gitlet.Main init
+
                 validateNumArgs(args, 1);
                 if (!repoExists) {
                     Repository.initialize();
@@ -34,6 +36,8 @@ public class Main {
                 System.exit(0);
 
             case "add":
+                // java gitlet.Main add [file name]
+
                 validateNumArgs(args, 2);
                 if (repoExists) {
                     Repository.add(args[1]);
@@ -42,6 +46,8 @@ public class Main {
                 notInit();
 
             case "commit":
+                // java gitlet.Main commit [message]
+
                 validateNumArgs(args, 2);
                 if (repoExists) {
                     Repository.commit(args[1]);
@@ -50,6 +56,8 @@ public class Main {
                 notInit();
 
             case "rm":
+                // java gitlet.Main rm [file name]
+
                 validateNumArgs(args, 2);
                 if (repoExists) {
                     Repository.rm(args[1]);
@@ -58,6 +66,8 @@ public class Main {
                 notInit();
 
             case "log":
+                // java gitlet.Main log
+
                 validateNumArgs(args, 1);
                 if (repoExists) {
                     Repository.log();
@@ -66,6 +76,8 @@ public class Main {
                 notInit();
 
             case "global-log":
+                // java gitlet.Main global-log
+
                 validateNumArgs(args, 1);
                 if (repoExists) {
                     Repository.global_log();
@@ -74,6 +86,8 @@ public class Main {
                 notInit();
 
             case "find":
+                // java gitlet.Main find [commit message]
+
                 validateNumArgs(args, 2);
                 if (repoExists) {
                     Repository.find(args[1]);
@@ -82,6 +96,8 @@ public class Main {
                 notInit();
 
             case "status":
+                // java gitlet.Main status
+
                 validateNumArgs(args, 1);
                 if (repoExists) {
                     Repository.status();
@@ -96,16 +112,16 @@ public class Main {
 
                 // java gitlet.Main checkout [branch name]
 
-                // validateNumArgs(args, 2);
+                // validateNumArgs(args, 2); not sure how to handle this
                 if (repoExists) {
                     if (args[1].equals("--")) {
                         System.out.println("not here");
                         Repository.checkout(args[2]);
-                    } else if (args[2].equals("--")) {
+                    } else if (!args[1].equals("--")) {
+                        Repository.checkoutBranch(args[1]);
+                    } else if (args[2].equals("--")){
                         System.out.println("here");
                         Repository.checkout(args[3], args[1]);
-                    } else {
-                        Repository.checkoutBranch(args[1]);
                     }
                     return;
                 }
@@ -113,6 +129,7 @@ public class Main {
 
             case "branch":
                 // java gitlet.Main branch [branch name]
+
                 validateNumArgs(args, 2);
                 if (repoExists) {
                     Repository.branch(args[1]);
@@ -121,7 +138,15 @@ public class Main {
                 notInit();
 
             case "rm-branch":
-                return;
+                // java gitlet.Main rm-branch [branch name]
+
+                validateNumArgs(args, 2);
+                if (repoExists) {
+                    Repository.branch(args[1]);
+                    return;
+                }
+                notInit();
+
             case "reset":
                 return;
             case "merge":

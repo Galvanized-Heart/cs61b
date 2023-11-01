@@ -18,7 +18,7 @@ public class Repository {
     public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    public static final File GITLET_DIR = join(CWD, "danger-zone/.gitlet");
 
     /** Directories within .gitlet. */
     public static final File commits = join(GITLET_DIR, "commits");
@@ -75,7 +75,7 @@ public class Repository {
      */
     public static void add(String filename) {
         // Check if input files exists
-        File file = join(CWD, filename);
+        File file = join(CWD, ("danger-zone/" + filename));
         if (!file.exists()) {
             System.out.println("File does not exist.");
             return;
@@ -224,7 +224,7 @@ public class Repository {
             repo.rm.add(filename);
 
             // Delete said file if it exists
-            File file = join(CWD, filename);
+            File file = join(CWD, ("danger-zone/" + filename));
             if (file.exists()) {
                 file.delete();
             }
@@ -276,7 +276,7 @@ public class Repository {
         printCommitTree(repo, repo.commitSearch.get(c.parent));
     }
 
-    // Prints commit+metadata (make method of Commit)
+    // Prints commit+metadata (make this a method of Commit)
     private static void printCommit(Commit c) {
         System.out.println("===");
         System.out.println("commit "+c.id);
@@ -369,7 +369,7 @@ public class Repository {
 
     public static void checkout(String filename, String sha) {
         // Fetch file path
-        File file = join(CWD, filename);
+        File file = join(CWD, ("danger-zone/" + filename));
 
         // Open current repo
         Repo repo = readObject(repository, Repo.class);
@@ -397,20 +397,71 @@ public class Repository {
         writeContents(file, b.content);
     }
 
-    public static void checkoutBranch(String branch) {
-        // Take files from head of commit of a branch
-        // Puts commit version of files in CWD overwriting current version of files (if they exist)
-        // Any files from current branch that are not in checked out branch are to be deleted
-        // If (checked-out branch != current branch) clear stage
-        // HEAD will be set to current branch
+    public static void checkoutBranch(String branchName) {
+         // remove "danger-zone" features in code after completion (Crtl+F)
 
-        // Fetch files from either master or other-branch
-        // For each file in most front commit in that branch,
-            // write over fileVersion based on commit
-        // Delete any files from the current branch that are not in checked out branch
-            // Does this mean I have to compare the files in each branch?
-        // Clear the stage if branches were swapped and do not clear if you are in the same branch
-        // Update HEAD to current branch
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
+
+        // Check if branch exists
+        if (!repo.branches.containsKey(branchName)) {
+            System.out.println("No such branch exists.");
+            System.exit(0);
+        }
+
+        // Check if current branch is changing
+        if (repo.currBranch.equals(branchName)) {
+            System.out.println("No need to checkout the current branch.");
+            System.exit(0);
+        }
+
+        // Check if stage contains items
+        if (!repo.add.isEmpty() || !repo.rm.isEmpty()) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        // Set file location
+        File files = join(CWD, "danger-zone");
+
+        // Fetch files in CWD
+        List<String> commitList = plainFilenamesIn(files);
+        assert commitList != null;
+        Set<String> commitSet = new HashSet<>(commitList); // O(N)
+
+        // Fetch files from target commit
+        Commit targCommit = repo.commitSearch.get(repo.branches.get(branchName));
+        TreeMap<String, String> targFiles = targCommit.files; // Name:SHA
+
+        // Add files from target commit to CWD
+        for (Map.Entry<String, String> entry : targFiles.entrySet()) { // O(N)
+            String filename = entry.getKey();
+            String fileID = entry.getValue();
+            Blob b = repo.blobSearch.get(fileID); // O(1)
+            File file_path = join(files, filename);
+            writeContents(file_path, b.content);
+            commitSet.remove(filename);
+        }
+
+        // Remove files in CWD from old commit
+        for (String filename : commitSet) { // O(N)
+            File file_path = join(files, filename);
+            file_path.delete();
+        }
+
+        // Check if branch has changed
+        if (!repo.currBranch.equals(branchName)) {
+            // Clear stage
+            repo.add = new TreeMap<>();
+            repo.rm = new ArrayList<>();
+        }
+
+        // Update HEAD and current-branch pointers
+        repo.currBranch = branchName;
+        repo.HEAD = repo.branches.get(branchName); // gets SHA of commit at head of branch
+
+        // Save changes to repo
+        writeObject(repository, repo);
     }
 
     public static void branch(String branchName) {
@@ -425,10 +476,19 @@ public class Repository {
 
         // Copy String from HEAD to new-branch
         repo.branches.put(branchName, repo.HEAD);
+
+        // Save changes to repo
+        writeObject(repository, repo);
     }
+
+
+
 
     public static void test() {
         Repo repo = readObject(repository, Repo.class);
+        System.out.println(repo.branches);
+        System.out.println(repo.HEAD);
+        System.out.println(repo.blobSearch);
     }
 
 }

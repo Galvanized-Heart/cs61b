@@ -37,9 +37,9 @@ public class Repo implements Serializable {
 
     // Search for commit (get/put)
     // Search for blob (get/put)
-    // Search for branch (get/put)
-    // Edit add (get?/put/remove)
-    // Edit rm
+    // Search for branch (get/put) print
+    // Edit add (get?/put/remove) print
+    // Edit rm print
     // Edit HEAD
 
 }
