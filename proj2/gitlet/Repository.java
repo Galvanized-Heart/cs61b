@@ -48,9 +48,10 @@ public class Repository {
         // Create repo with hash for initial commit
         String commit_0_id = initial.id;
         Repo repo = new Repo();
-        repo.master = commit_0_id;
+        repo.branches.put("master", commit_0_id);
+        repo.currBranch = "master";
         repo.HEAD = commit_0_id;
-        repo.commitSearch.put(commit_0_id, initial); // add to look up
+        repo.commitSearch.put(commit_0_id, initial);
 
         // Create persistent files for initial commit and repo
         try {
@@ -167,9 +168,8 @@ public class Repository {
         // Fetch current commit and create new commit
         Commit currentCommit = repo.commitSearch.get(repo.HEAD);
         TreeMap<String, String> copiedFiles = new TreeMap<>(currentCommit.files);
-        Commit newCommit = new Commit(message, repo.master, copiedFiles);
-        // I think this^ doesn't copy, but instead accesses commit_0.files and edits that
-        // since all the commits seem to have the same .files TreeMap
+        String currBranch = repo.branches.get(repo.currBranch);
+        Commit newCommit = new Commit(message, currBranch, copiedFiles);
 
         // Check if files exists
         if (newCommit.files != null) {
@@ -184,10 +184,11 @@ public class Repository {
             repo.commitSearch.put(newCommit.id, newCommit);
         }
 
-        // Update HEAD and master pointers
-        repo.master = newCommit.id;
+        // Update HEAD and branch pointers
+        repo.branches.put(repo.currBranch, newCommit.id);
         repo.HEAD = newCommit.id;
-        System.out.println("HEAD AND MASTER: "+repo.HEAD + " " + repo.master);
+        //debug
+        System.out.println("HEAD AND MASTER: "+repo.HEAD + " " + repo.branches.get(repo.currBranch));
 
         // Clear stage
         repo.add = new TreeMap<>();
@@ -331,17 +332,23 @@ public class Repository {
         // Open current repo
         Repo repo = readObject(repository, Repo.class);
 
+        // Print out branches
         System.out.println("=== Branches ===");
-        System.out.println("*master");
-        System.out.println("other-branch\n");
+        for (String name : repo.branches.keySet()) {
+            if (name.equals(repo.currBranch)) {
+                System.out.print("*");
+            }
+            System.out.println(name);
+        }
 
+        // Print out files staged for addition
         System.out.println("=== Staged Files ===");
         for (String name : repo.add.keySet()) {
             System.out.println(name);
         }
         System.out.println();
 
-
+        // Print out files staged for removal
         System.out.println("=== Removed Files ===");
         Collections.sort(repo.rm);
         for (String name : repo.rm) {
@@ -407,19 +414,21 @@ public class Repository {
     }
 
     public static void branch(String branchName) {
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
 
+        // Check if branch with specified name exists
+        if (repo.branches.containsKey(branchName)) { // O(1) since hashmap
+            System.out.print("A branch with that name already exists.");
+            System.exit(0);
+        }
+
+        // Copy String from HEAD to new-branch
+        repo.branches.put(branchName, repo.HEAD);
     }
 
     public static void test() {
         Repo repo = readObject(repository, Repo.class);
-        Commit a = repo.commitSearch.get("dc9bc3c0ca408f37d6f5a55a97dc9e3bcb3d4698");
-        Commit b = repo.commitSearch.get("d8e9da5ac28ab575a32530adfa3486911ddd09d0");
-        Commit c = repo.commitSearch.get("1f10b8af725834ecd8cde3f76e40b3b67a2b064e");
-        Commit d = repo.commitSearch.get("03b49387ae251ab3c7569569a4ebb9503fa8b5d8");
-        System.out.println(a.files);
-        System.out.println(b.files);
-        System.out.println(c.files);
-        System.out.println(d.files);
     }
 
 }
