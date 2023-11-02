@@ -481,7 +481,28 @@ public class Repository {
         writeObject(repository, repo);
     }
 
+    public static void rm_branch(String branchName) {
+        // Open current repo
+        Repo repo = readObject(repository, Repo.class);
 
+        // Check if branch exists
+        if (!repo.branches.containsKey(branchName)) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        // Check if currently on specified branch
+        if (repo.currBranch.equals(branchName)) {
+            System.out.println("Cannot remove the current branch.");
+            System.exit(0);
+        }
+
+        // Delete branch
+        repo.branches.remove(branchName);
+
+        // Save changes to repo
+        writeObject(repository, repo);
+    }
 
 
     public static void test() {

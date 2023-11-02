@@ -142,7 +142,7 @@ public class Main {
 
                 validateNumArgs(args, 2);
                 if (repoExists) {
-                    Repository.branch(args[1]);
+                    Repository.rm_branch(args[1]);
                     return;
                 }
                 notInit();
