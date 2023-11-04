@@ -15,7 +15,10 @@ public class Main {
      *  <COMMAND> <OPERAND1> <OPERAND2> ... 
      */
     public static void main(String[] args) {
+        Repository repo = null;
         boolean repoExists = Repository.GITLET_DIR.exists();
+
+        // Check if command was entered
         if (args.length == 0) {
             System.out.println("Please enter a command.");
             System.exit(0);
@@ -23,137 +26,128 @@ public class Main {
 
         String firstArg = args[0];
 
+        // Check command and existence of repository
+        if (!firstArg.equals("init")) {
+            if (repoExists) {
+                repo = readObject(Repository.repository, Repository.class);
+            } else {
+                System.out.println("Not in an initialized Gitlet directory.");
+                System.exit(0);
+            }
+        } else {
+            if (!repoExists) {
+                repo = new Repository();
+            } else {
+                System.out.println("A Gitlet version-control system already exists in the current directory.");
+                System.exit(0);
+            }
+        }
+
         switch(firstArg) {
             case "init":
                 // java gitlet.Main init
-
                 validateNumArgs(args, 1);
-                if (!repoExists) {
-                    Repository.initialize();
-                    return;
-                }
-                System.out.println("A Gitlet version-control system already exists in the current directory.");
-                System.exit(0);
+                repo.initialize();
+                return;
 
             case "add":
                 // java gitlet.Main add [file name]
-
                 validateNumArgs(args, 2);
-                if (repoExists) {
-                    Repository.add(args[1]);
-                    return;
-                }
-                notInit();
+                repo.add(args[1]);
+                return;
+
 
             case "commit":
                 // java gitlet.Main commit [message]
-
                 validateNumArgs(args, 2);
-                if (repoExists) {
-                    Repository.commit(args[1]);
-                    return;
-                }
-                notInit();
+                repo.commit(args[1]);
+                return;
 
             case "rm":
                 // java gitlet.Main rm [file name]
-
                 validateNumArgs(args, 2);
-                if (repoExists) {
-                    Repository.rm(args[1]);
-                    return;
-                }
-                notInit();
+                repo.rm(args[1]);
+                return;
 
             case "log":
                 // java gitlet.Main log
-
                 validateNumArgs(args, 1);
-                if (repoExists) {
-                    Repository.log();
-                    return;
-                }
-                notInit();
+                repo.log();
+                return;
 
             case "global-log":
                 // java gitlet.Main global-log
-
                 validateNumArgs(args, 1);
-                if (repoExists) {
-                    Repository.global_log();
-                    return;
-                }
-                notInit();
+                repo.global_log();
+                return;
+
 
             case "find":
                 // java gitlet.Main find [commit message]
-
                 validateNumArgs(args, 2);
-                if (repoExists) {
-                    Repository.find(args[1]);
-                    return;
-                }
-                notInit();
+                repo.find(args[1]);
+                return;
 
             case "status":
                 // java gitlet.Main status
-
                 validateNumArgs(args, 1);
-                if (repoExists) {
-                    Repository.status();
-                    return;
-                }
-                notInit();
+                repo.status();
+                return;
 
             case "checkout":
                 // java gitlet.Main checkout -- [file name]
+                if (args[1].equals("--")) {
+                    validateNumArgs(args, 3);
+                    repo.checkout(args[2]);
+                }
 
                 // java gitlet.Main checkout [commit id] -- [file name]
+                else if (args[2].equals("--")){
+                    validateNumArgs(args, 2);
+                    repo.checkout(args[3], args[1]);
+                }
 
                 // java gitlet.Main checkout [branch name]
-
-                // validateNumArgs(args, 2); not sure how to handle this
-                if (repoExists) {
-                    if (args[1].equals("--")) {
-                        System.out.println("not here");
-                        Repository.checkout(args[2]);
-                    } else if (!args[1].equals("--")) {
-                        Repository.checkoutBranch(args[1]);
-                    } else if (args[2].equals("--")){
-                        System.out.println("here");
-                        Repository.checkout(args[3], args[1]);
-                    }
-                    return;
+                else if (!args[1].equals("--")) {
+                    validateNumArgs(args, 4);
+                    repo.checkoutBranch(args[1]);
                 }
-                notInit();
+
+                else { // Incorrect formatting of operands
+                    validateNumArgs(args, 0);
+                }
+
+                return;
 
             case "branch":
                 // java gitlet.Main branch [branch name]
-
                 validateNumArgs(args, 2);
-                if (repoExists) {
-                    Repository.branch(args[1]);
-                    return;
-                }
-                notInit();
+                repo.branch(args[1]);
+                return;
+
 
             case "rm-branch":
                 // java gitlet.Main rm-branch [branch name]
-
                 validateNumArgs(args, 2);
-                if (repoExists) {
-                    Repository.rm_branch(args[1]);
-                    return;
-                }
-                notInit();
+                repo.rmBranch(args[1]);
+                return;
 
             case "reset":
+                // java gitlet.Main reset [commit id]
+                validateNumArgs(args, 2);
+                repo.reset(args[1]);
                 return;
+
             case "merge":
+                // java gitlet.Main merge [branch name]
+                validateNumArgs(args, 2);
+                repo.merge(args[1]);
                 return;
+
             // push & pull are extra credit
+
             case "test":
-                Repository.test();
+                repo.test();
                 return;
         }
         System.out.println("No command with that name exists.");
@@ -165,11 +159,6 @@ public class Main {
             System.out.println("Incorrect operands."); // also has to be done for incorrect formatting of operands
             System.exit(0);
         }
-    }
-
-    public static void notInit() {
-        System.out.println("Not in an initialized Gitlet directory.");
-        System.exit(0);
     }
 }
 

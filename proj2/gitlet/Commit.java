@@ -46,6 +46,7 @@ public class Commit implements Serializable {
 
     /** SHA for each parent Commit. */
     public String parent;
+    public String otherParent;
 
     /** Name:SHA in Commit. */
     public TreeMap<String, String> files;
@@ -56,7 +57,7 @@ public class Commit implements Serializable {
         timestamp = new Date().toString();
         parent = p;
         files = f;
-        id = sha1(message + parent + timestamp + files); // needs to include blob references too!
+        id = sha1(message + parent + timestamp + files);
         System.out.println("Commit constructed: " + id);
     }
 
@@ -64,5 +65,9 @@ public class Commit implements Serializable {
     public String toString() {
         // String build: printCommit() from Repository.java
         return "";
+    }
+
+    public void setOtherParent(String op) {
+        otherParent = op;
     }
 }
