@@ -56,7 +56,6 @@ public class Main {
                 repo.add(args[1]);
                 return;
 
-
             case "commit":
                 // java gitlet.Main commit [message]
                 validateNumArgs(args, 2);
@@ -81,7 +80,6 @@ public class Main {
                 repo.global_log();
                 return;
 
-
             case "find":
                 // java gitlet.Main find [commit message]
                 validateNumArgs(args, 2);
@@ -94,29 +92,28 @@ public class Main {
                 repo.status();
                 return;
 
-            case "checkout":
+            case "checkout": // NEED TO REORDER THESE NOT TO PRODUCE ERRORS!!!
                 // java gitlet.Main checkout -- [file name]
                 if (args[1].equals("--")) {
                     validateNumArgs(args, 3);
                     repo.checkout(args[2]);
                 }
 
-                // java gitlet.Main checkout [commit id] -- [file name]
-                else if (args[2].equals("--")){
-                    validateNumArgs(args, 2);
-                    repo.checkout(args[3], args[1]);
-                }
-
                 // java gitlet.Main checkout [branch name]
                 else if (!args[1].equals("--")) {
-                    validateNumArgs(args, 4);
+                    validateNumArgs(args, 2);
                     repo.checkoutBranch(args[1]);
+                }
+
+                // java gitlet.Main checkout [commit id] -- [file name]
+                else if (args[2].equals("--")){
+                    validateNumArgs(args, 4);
+                    repo.checkout(args[3], args[1]);
                 }
 
                 else { // Incorrect formatting of operands
                     validateNumArgs(args, 0);
                 }
-
                 return;
 
             case "branch":
@@ -124,7 +121,6 @@ public class Main {
                 validateNumArgs(args, 2);
                 repo.branch(args[1]);
                 return;
-
 
             case "rm-branch":
                 // java gitlet.Main rm-branch [branch name]

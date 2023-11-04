@@ -367,7 +367,10 @@ public class Repository implements Serializable {
     /** Checks out files from a designated commit or branch
      *
      * STILL NEED TO SUPPORT CONCATENATED COMMIT IDs
+     *
      * UPDATE TO PLAY WELL WITH reset(str)
+     *
+     * NEED TO UPDATE rm STAGE IF FILE WAS ADDED WHEN IT WAS JUST REMOVED!
      */
     public void checkout(String filename) {
         checkout(filename, HEAD);
