@@ -58,7 +58,7 @@ public class Commit implements Serializable {
         parents[0] = p;
         files = f;
         id = sha1(message + parents[0] + timestamp + files);
-        System.out.println("Commit constructed: " + id);
+        //System.out.println("Commit constructed: " + message);
     }
 
     @Override

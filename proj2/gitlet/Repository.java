@@ -204,7 +204,7 @@ public class Repository implements Serializable {
         branches.put(currBranch, newCommit.id);
         HEAD = newCommit.id;
         //debug
-        System.out.println("HEAD AND MASTER: "+HEAD + " " + branches.get(currBranch));
+        //System.out.println("HEAD: "+ HEAD);
 
         // Clear stage
         add = new TreeMap<>();
@@ -552,9 +552,7 @@ public class Repository implements Serializable {
         // Support commitID concatenation (kinda like checkout, fix later)
     }
 
-    /** Merges files from a given branch to the current branch.
-     *
-     * MIGHT HAVE TO DO SOME COMMIT REARRANGING IF HEAD IS NOT AT END OF BRANCH!!! */
+    /** Merges files from a given branch to the current branch. */
     public void merge(String branchName) {
         // Find split point
         String other = branches.get(branchName);
@@ -572,13 +570,17 @@ public class Repository implements Serializable {
             System.exit(0);
         }
 
-        //
+        // Fetch commits for each branch
         Commit thisBranch = commitSearch.get(HEAD);
         Commit thatBranch = commitSearch.get(other);
 
-        Set<String> uniqueFileNames = getAllUniqueFilenames(split.files, thisBranch.files, thatBranch.files);
+        // Find all unique filenames
+        Set<String> filenames = getAllFilenames(split.files, thisBranch.files, thatBranch.files);
 
-        for (String filename : uniqueFileNames) {
+        System.out.println(filenames);
+
+        // Iterate over all filenames and update commit accordingly
+        for (String filename : filenames) {
             boolean isInSplit = split.files.containsKey(filename);
             boolean isInThis = thisBranch.files.containsKey(filename);
             boolean isInThat = thatBranch.files.containsKey(filename);
@@ -586,7 +588,7 @@ public class Repository implements Serializable {
             boolean thatIsMod = false;
 
             // Check if file from thisBranch is modified compared to split point
-            if ((isInThis && isInSplit)) {
+            if (isInThis && isInSplit) {
                 // True if files are different versions
                 thisIsMod = !thisBranch.files.get(filename).equals(split.files.get(filename));
             } else if (!isInThis && isInSplit) {
@@ -595,7 +597,7 @@ public class Repository implements Serializable {
             }
 
             // Check if file from thatBranch is modified compared to split point
-            if ((isInThat && isInSplit)) {
+            if (isInThat && isInSplit) {
                 // True if files are different versions
                 thatIsMod = !thatBranch.files.get(filename).equals(split.files.get(filename));
             } else if (!isInThat && isInSplit) {
@@ -603,21 +605,37 @@ public class Repository implements Serializable {
                 thatIsMod = true;
             }
 
-            // Check if file is updated
-            if ((!isInSplit && !isInThis && isInThat) // File not in split, in thatBranch, not in thisBranch
-                    || (isInSplit && !thisIsMod && thatIsMod)) { // File is in split, modded in thatBranch, in thisBranch
-                File dz = join(CWD, "danger-zone");
-                File filePath = join(dz, filename);
-                writeContents(filePath, blobSearch.get(thatBranch.files.get(filename))); // Fix this?
-                add(filename);
-            } else if (isInSplit && isInThis && !isInThat) { // File is in split, not in thatBranch, in thisBranch
-                rm(filename);
-            } else if (thisIsMod && thatIsMod) {
+            System.out.println(filename+"\n");
+            if (filename.equals("i.txt")) {
+                System.out.println(split.files);
+                System.out.println("isInSplit: " + isInSplit);
+                System.out.println("isInThis: " + isInThis);
+                System.out.println("isInThat: " + isInThat);
+                System.out.println("thisIsMod: " + thisIsMod);
+                System.out.println("thatIsMod: " + thatIsMod);
+            }
+
+            // Check if file needs to be updated and update accordingly
+            if (thisIsMod && thatIsMod) { // might be issue here
                 // Merge conflict for 2 files
                 String thisFile = thisBranch.files.get(filename);
                 String thatFile = thatBranch.files.get(filename);
                 mergeConflict(blobSearch.get(thisFile), blobSearch.get(thatFile));
                 add(filename);
+            } else if (isInSplit && isInThis && !isInThat) {
+                System.out.println("===Removing");
+                rm(filename);
+            } else if ((!isInSplit && !isInThis && isInThat) || (isInSplit && !thisIsMod && thatIsMod)) {
+                System.out.println("===Adding");
+                File dz = join(CWD, "danger-zone");
+                File filePath = join(dz, filename);
+                String file = thatBranch.files.get(filename);
+                System.out.println(file);
+                Blob blob = blobSearch.get(file);
+                writeContents(filePath, blob.content);
+                add(filename);
+            } else {
+                System.out.println("===Keep");
             }
         }
         commit("Merged " + branchName + " into " + currBranch + ".");
@@ -646,7 +664,7 @@ public class Repository implements Serializable {
         Queue<String> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
 
-        // Add branch commits to queue
+        // Add branch commitIDs to queue
         queue.offer(branch1);
         queue.offer(branch2);
 
@@ -675,13 +693,15 @@ public class Repository implements Serializable {
         return null;
     }
 
-    private Set<String> getAllUniqueFilenames(TreeMap<String, String> map1, TreeMap<String, String> map2, TreeMap<String, String> map3) {
+    /** Returns a set containing all the unique filenames from 3 TreeMaps. */
+    private Set<String> getAllFilenames(TreeMap<String, String> map1, TreeMap<String, String> map2, TreeMap<String, String> map3) {
         Set<String> uniqueFileNames = new HashSet<>(map1.keySet());
         uniqueFileNames.addAll(map2.keySet());
         uniqueFileNames.addAll(map3.keySet());
         return uniqueFileNames;
     }
 
+    /** Rewrites a merge conflicted file to contain contents from both versions of the file. */
     private void mergeConflict(Blob blob1, Blob blob2) {
         System.out.println("Encountered a merge conflict.");
 
@@ -724,25 +744,68 @@ public class Repository implements Serializable {
         writeContents(c, "ccc");
         File d = join(GITLET_DIR, "../d.txt");
         writeContents(d, "ddd");
+        File e = join(GITLET_DIR, "../e.txt");
+        writeContents(e, "eee");
+        File f = join(GITLET_DIR, "../f.txt");
+        writeContents(f, "fff");
+        File h = join(GITLET_DIR, "../h.txt");
+        writeContents(h, "hhh");
+        File i = join(GITLET_DIR, "../i.txt");
+        writeContents(i, "iii");
 
+        // Build split commit
         add("a.txt");
         add("b.txt");
+        add("c.txt");
+        add("d.txt");
+        add("e.txt");
+        add("h.txt");
+        add("i.txt");
         commit("This will be the split node");
 
+        // Create other branch
         branch("other-branch");
-        add("c.txt");
+
+        // Build 1st commit away from split in master branch
+        writeContents(a, "aaa*");
+        add("a.txt");
+        writeContents(b, "bbb*");
+        add("b.txt");
         commit("Commit 1 in master branch");
 
-        add("d.txt");
+        // Build 2nd commit away from split in master branch
+        rm("e.txt");
+        add("f.txt");
+        writeContents(h, "hhh*");
+        add("h.txt");
+        rm("i.txt");
         commit("Commit 2 in master branch");
 
+        // Switch to other branch
         checkoutBranch("other-branch");
-        writeContents(a, "hihihi");
+
+        // Build 1st commit away from split in other branch
+        writeContents(a, "aaa**");
         add("a.txt");
+        writeContents(c, "ccc*");
+        add("c.txt");
+        rm("d.txt");
+        File g = join(GITLET_DIR, "../g.txt");
+        writeContents(g, "ggg");
+        add("g.txt");
+        rm("h.txt");
+        writeContents(i, "iii*");
+        add("i.txt");
         commit("Commit 1 in other branch");
 
-        global_log();
-        merge("master");
-    }
+        checkoutBranch("master");
 
+        System.out.println("\n========\n");
+
+        merge("other-branch");
+
+        System.out.println("\n========\n");
+
+        System.out.println(commitSearch.get(HEAD));
+    }
 }
