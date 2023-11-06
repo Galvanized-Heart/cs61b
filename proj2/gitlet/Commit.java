@@ -44,9 +44,9 @@ public class Commit implements Serializable {
     public String message;
     public String timestamp;
 
-    /** SHA for each parent Commit. */
-    public String parent;
-    public String otherParent;
+    /** IDs for each parent Commit. */
+    public String[] parents = new String[2];
+
 
     /** Name:SHA in Commit. */
     public TreeMap<String, String> files;
@@ -55,19 +55,28 @@ public class Commit implements Serializable {
     public Commit(String m, String p, TreeMap<String, String> f) {
         message = m;
         timestamp = new Date().toString();
-        parent = p;
+        parents[0] = p;
         files = f;
-        id = sha1(message + parent + timestamp + files);
+        id = sha1(message + parents[0] + timestamp + files);
         System.out.println("Commit constructed: " + id);
     }
 
     @Override
     public String toString() {
-        // String build: printCommit() from Repository.java
+        System.out.println("===");
+        System.out.println("commit "+id);
+        // if (isMerge) { // Figure this out when you understand merge
+        // System.out.println("Merge: "+
+        //                    c.parent_1.substring(0, 7) +
+        //                    " " +
+        //                    c.parent_2.substring(0, 7)
+        // }
+        System.out.println("Date: "+timestamp);
+        System.out.println(message+"\n");
         return "";
     }
 
     public void setOtherParent(String op) {
-        otherParent = op;
+        parents[1] = op;
     }
 }
