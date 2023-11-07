@@ -31,7 +31,7 @@ public class Repository implements Serializable {
     public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, "danger-zone/.gitlet");
+    public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /** Directories within .gitlet. */
     public static final File commits = join(GITLET_DIR, "commits");
@@ -96,7 +96,7 @@ public class Repository implements Serializable {
     /** Sets blob to be added to next commit by staging it for addition. */
     public void add(String filename) {
         // Check if input files exists
-        File file = join(CWD, ("danger-zone/" + filename));
+        File file = join(CWD, filename);
         if (!file.exists()) {
             System.out.println("File does not exist.");
             return;
@@ -236,7 +236,7 @@ public class Repository implements Serializable {
             rm.add(filename);
 
             // Delete said file if it exists
-            File file = join(CWD, ("danger-zone/" + filename));
+            File file = join(CWD, filename);
             if (file.exists()) {
                 file.delete();
             }
@@ -486,8 +486,7 @@ public class Repository implements Serializable {
             } else if (isInSplit && isInThis && !isInThat) {
                 rm(filename);
             } else if ((!isInSplit && !isInThis && isInThat) || (isInSplit && !thisIsMod && thatIsMod)) {
-                File dz = join(CWD, "danger-zone");
-                File filePath = join(dz, filename);
+                File filePath = join(CWD, filename);
                 String file = thatBranch.files.get(filename);
                 System.out.println(file);
                 Blob blob = blobSearch.get(file);
@@ -540,9 +539,6 @@ public class Repository implements Serializable {
             System.exit(0);
         }
 
-        // Set file location
-        File filesPath = join(CWD, "danger-zone");
-
         // Check if filename is specified
         if (filename != null) {
             // Fetch file version as in commit
@@ -556,7 +552,7 @@ public class Repository implements Serializable {
 
             // Writes file to CWD if fileVersion exists in commit
             Blob b = blobSearch.get(fileVersion);
-            writeContents(filesPath, b.content);
+            writeContents(CWD, b.content);
 
             // Updates stage
             rm.remove(filename);
@@ -572,7 +568,7 @@ public class Repository implements Serializable {
             }
 
             // Fetch files in CWD
-            List<String> commitList = plainFilenamesIn(filesPath);
+            List<String> commitList = plainFilenamesIn(CWD);
             assert commitList != null;
             Set<String> filesRemaining = new HashSet<>(commitList);
 
@@ -586,7 +582,7 @@ public class Repository implements Serializable {
 
                 // Update file contents
                 Blob b = blobSearch.get(fileID);
-                File file_path = join(filesPath, fileName);
+                File file_path = join(CWD, fileName);
                 writeContents(file_path, b.content);
 
                 // Update remaining files
@@ -595,7 +591,7 @@ public class Repository implements Serializable {
 
             // Remove remaining files in CWD from old commit
             for (String fileName : filesRemaining) {
-                File file_path = join(filesPath, fileName);
+                File file_path = join(CWD, fileName);
                 file_path.delete();
             }
         }
@@ -665,18 +661,17 @@ public class Repository implements Serializable {
         // Initialize contents and filepath
         String content1;
         String content2;
-        File dz = join(CWD, "danger-zone");
         File filePath = null;
 
         // Read contents from blob1 as string
         if (blob1 != null) {
-            filePath = join(dz, blob1.name);
+            filePath = join(CWD, blob1.name);
             content1 = new String(blob1.content, StandardCharsets.UTF_8);
         } else { content1 = ""; }
 
         // Read contents from blob2 as string
         if (blob2 != null) {
-            filePath = join(dz, blob2.name);
+            filePath = join(CWD, blob2.name);
             content2 = new String(blob2.content, StandardCharsets.UTF_8);
         } else { content2 = ""; }
 
