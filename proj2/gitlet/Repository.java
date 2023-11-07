@@ -24,7 +24,7 @@ public class Repository implements Serializable {
     /***************************************************************************************************
     INSTANCE VARIABLES */
 
-    /** Max length of SHA hash. */
+    /** The maximum length of SHA hash. */
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
@@ -70,7 +70,7 @@ public class Repository implements Serializable {
 
         // Create initial commit
         Commit initial = new Commit("initial commit", null, new TreeMap<>());
-        File commit_path = join(commits, initial.id);
+        File commitPath = join(commits, initial.id);
 
         // Create repo with hash for initial commit
         String commitID = initial.id;
@@ -81,7 +81,7 @@ public class Repository implements Serializable {
 
         // Create persistent files for initial commit and repo
         try {
-            commit_path.createNewFile();
+            commitPath.createNewFile();
             repository.createNewFile();
         }
         catch (Exception e){
@@ -89,7 +89,7 @@ public class Repository implements Serializable {
         }
 
         // Save initial commit and repo
-        writeObject(commit_path, initial);
+        writeObject(commitPath, initial);
         writeObject(repository, this);
     }
 
@@ -313,15 +313,16 @@ public class Repository implements Serializable {
         System.out.println();
     }
 
-    /** Checks out files from a branch of a single file from a designated commit.
-     *
-     * STILL NEED TO SUPPORT CONCATENATED COMMIT IDs
-     */
+    /** Checks out files from a branch of a single file from a designated commit. */
     public void checkout(String filename) {
         checkout(filename, HEAD);
     }
-
     public void checkout(String filename, String commitID) {
+        // Check if concatenated ID
+        if (commitID.length() < MAX_ID_LEN) {
+            commitID = findCommit(commitID);
+        }
+
         // Changes file to version in commit
         Commit commit = commitSearch.get(commitID);
         checkoutFiles(commit, filename);
@@ -401,7 +402,7 @@ public class Repository implements Serializable {
      * ARE DELETED FROM .GITLET? THAT WAY IT WON'T SHOW UP ON GLOBAL-LOG
      */
     public void reset(String commitID) {
-
+        // Check if concatenated ID
         if (commitID.length() < MAX_ID_LEN) {
             commitID = findCommit(commitID);
         }
@@ -532,7 +533,6 @@ public class Repository implements Serializable {
     private void checkoutFiles(Commit commit) {
         checkoutFiles(commit, null);
     }
-
     private void checkoutFiles(Commit commit, String filename) {
         // Check if commit exists
         if (commit == null) {
