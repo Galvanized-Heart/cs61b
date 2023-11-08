@@ -27,13 +27,10 @@ public class Repository implements Serializable {
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    public static final File DZ = new File(System.getProperty("user.dir")); // Change DZ to CWD when done testing
-
-    // Temporary danger-zone
-    public static final File CWD = join(DZ, "danger-zone"); // Remove DZ when done testing
+    public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
 
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet"); // Remove DZ when done testing
+    public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /** Directories within .gitlet. */
     public static final File commits = join(GITLET_DIR, "commits");
@@ -761,5 +758,12 @@ public class Repository implements Serializable {
         writeContents(wug, "notwug.txt");
 
         checkout("wug.txt");
+    }
+
+    public void testReset() {
+        File i = join(GITLET_DIR, "../i.txt");
+        writeContents(i, "iii");
+
+
     }
 }

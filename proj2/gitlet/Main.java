@@ -143,8 +143,14 @@ public class Main {
 
             // push & pull are extra credit
 
-            case "test":
+            case "test1":
                 repo.testMerging();
+                break;
+            case "test2":
+                repo.testBasicCheckout();
+                break;
+            case "test3":
+                //repo.testMerging();
                 break;
 
             default:
