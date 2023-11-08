@@ -24,6 +24,7 @@ public class Main {
             System.exit(0);
         }
 
+        // Fetch command
         String firstArg = args[0];
 
         // Check command and existence of repository
@@ -48,49 +49,49 @@ public class Main {
                 // java gitlet.Main init
                 validateNumArgs(args, 1);
                 repo.initialize();
-                return;
+                break;
 
             case "add":
                 // java gitlet.Main add [file name]
                 validateNumArgs(args, 2);
                 repo.add(args[1]);
-                return;
+                break;
 
             case "commit":
                 // java gitlet.Main commit [message]
                 validateNumArgs(args, 2);
                 repo.commit(args[1]);
-                return;
+                break;
 
             case "rm":
                 // java gitlet.Main rm [file name]
                 validateNumArgs(args, 2);
                 repo.rm(args[1]);
-                return;
+                break;
 
             case "log":
                 // java gitlet.Main log
                 validateNumArgs(args, 1);
                 repo.log();
-                return;
+                break;
 
             case "global-log":
                 // java gitlet.Main global-log
                 validateNumArgs(args, 1);
                 repo.global_log();
-                return;
+                break;
 
             case "find":
                 // java gitlet.Main find [commit message]
                 validateNumArgs(args, 2);
                 repo.find(args[1]);
-                return;
+                break;
 
             case "status":
                 // java gitlet.Main status
                 validateNumArgs(args, 1);
                 repo.status();
-                return;
+                break;
 
             case "checkout": // NEED TO REORDER THESE NOT TO PRODUCE ERRORS!!!
                 // java gitlet.Main checkout -- [file name]
@@ -114,40 +115,42 @@ public class Main {
                 else { // Incorrect formatting of operands
                     validateNumArgs(args, 0);
                 }
-                return;
+                break;
 
             case "branch":
                 // java gitlet.Main branch [branch name]
                 validateNumArgs(args, 2);
                 repo.branch(args[1]);
-                return;
+                break;
 
             case "rm-branch":
                 // java gitlet.Main rm-branch [branch name]
                 validateNumArgs(args, 2);
                 repo.rmBranch(args[1]);
-                return;
+                break;
 
             case "reset":
                 // java gitlet.Main reset [commit id]
                 validateNumArgs(args, 2);
                 repo.reset(args[1]);
-                return;
+                break;
 
             case "merge":
                 // java gitlet.Main merge [branch name]
                 validateNumArgs(args, 2);
                 repo.merge(args[1]);
-                return;
+                break;
 
             // push & pull are extra credit
 
             case "test":
-                repo.test();
-                return;
+                repo.testMerging();
+                break;
+
+            default:
+                System.out.println("No command with that name exists.");
+                System.exit(0);
         }
-        System.out.println("No command with that name exists.");
-        System.exit(0);
     }
 
     public static void validateNumArgs(String[] args, int n) {

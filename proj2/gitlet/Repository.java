@@ -6,7 +6,6 @@ import static gitlet.Utils.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -22,16 +21,19 @@ import java.util.*;
 public class Repository implements Serializable {
 
     /***************************************************************************************************
-    INSTANCE VARIABLES */
+     INSTANCE VARIABLES */
 
     /** The maximum length of SHA hash. */
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public static final File DZ = new File(System.getProperty("user.dir")); // Change DZ to CWD when done testing
+
+    // Temporary danger-zone
+    public static final File CWD = join(DZ, "danger-zone"); // Remove DZ when done testing
 
     /** The .gitlet directory. */
-    public static final File GITLET_DIR = join(CWD, ".gitlet");
+    public static final File GITLET_DIR = join(CWD, ".gitlet"); // Remove DZ when done testing
 
     /** Directories within .gitlet. */
     public static final File commits = join(GITLET_DIR, "commits");
@@ -56,7 +58,7 @@ public class Repository implements Serializable {
     public ArrayList<String> rm = new ArrayList<>();
 
     /***************************************************************************************************
-    MAIN METHODS */
+     MAIN METHODS */
 
     /** Creates directory and files for Gitlet, initializes initial commit,
      * and sets master and HEAD pointers. */
@@ -69,15 +71,15 @@ public class Repository implements Serializable {
         blobs.mkdir();
 
         // Create initial commit
-        Commit initial = new Commit("initial commit", null, new TreeMap<>());
-        File commitPath = join(commits, initial.id);
+        Commit commit = new Commit("initial commit", null, new TreeMap<>());
+        File commitPath = join(commits, commit.id);
 
         // Create repo with hash for initial commit
-        String commitID = initial.id;
+        String commitID = commit.id;
         branches.put("master", commitID);
         currBranch = "master";
         HEAD = commitID;
-        commitSearch.put(commitID, initial);
+        commitSearch.put(commitID, commit);
 
         // Create persistent files for initial commit and repo
         try {
@@ -89,21 +91,21 @@ public class Repository implements Serializable {
         }
 
         // Save initial commit and repo
-        writeObject(commitPath, initial);
+        writeObject(commitPath, commit);
         writeObject(repository, this);
     }
 
     /** Sets blob to be added to next commit by staging it for addition. */
     public void add(String filename) {
         // Check if input files exists
-        File file = join(CWD, filename);
-        if (!file.exists()) {
+        File filePath = join(CWD, filename);
+        if (!filePath.exists()) {
             System.out.println("File does not exist.");
             return;
         }
 
         // Create new blob
-        Blob blob = new Blob(file, filename);
+        Blob blob = new Blob(filePath, filename);
 
         // Checking components
         Commit currentCommit = commitSearch.get(HEAD);
@@ -224,7 +226,7 @@ public class Repository implements Serializable {
     /** Sets blob to be removed from next commit by staging it for removal
      * and removes file current working directory. */
     public void rm(String filename) {
-         // Check if file is staged for addition
+        // Check if file is staged for addition
         if (add.containsKey(filename)) {
             // Remove from staged additions
             add.remove(filename);
@@ -253,8 +255,8 @@ public class Repository implements Serializable {
     /** Prints out all commits in the current branch starting from the HEAD pointer
      * all the way to the initial commit. */
     public void log() {
-        Commit c = commitSearch.get(HEAD);
-        printCommitTree(c);
+        Commit commit = commitSearch.get(HEAD);
+        printCommitTree(commit);
     }
 
     /** Prints out all commits saved to the .gitlet directory. */
@@ -264,9 +266,9 @@ public class Repository implements Serializable {
             System.out.println("Found no commit with that message.");
             System.exit(0);
         }
-        for (String str : commitList) {
-            Commit c = commitSearch.get(str);
-            System.out.println(c.toString());
+        for (String commitID : commitList) {
+            Commit commit = commitSearch.get(commitID);
+            System.out.println(commit.toString());
         }
     }
 
@@ -278,10 +280,10 @@ public class Repository implements Serializable {
             System.out.println("Found no commit with that message.");
             System.exit(0);
         }
-        for (String str : commitList) {
-            Commit c = commitSearch.get(str);
-            if (c.message.equals(commitMessage)) {
-                System.out.println(c.toString());
+        for (String commitID : commitList) {
+            Commit commit = commitSearch.get(commitID);
+            if (commit.message.equals(commitMessage)) {
+                System.out.println(commit.toString());
             }
         }
     }
@@ -290,25 +292,25 @@ public class Repository implements Serializable {
     public void status() {
         // Print out branches
         System.out.println("=== Branches ===");
-        for (String name : branches.keySet()) {
-            if (name.equals(currBranch)) {
+        for (String branch : branches.keySet()) {
+            if (branch.equals(currBranch)) {
                 System.out.print("*");
             }
-            System.out.println(name);
+            System.out.println(branch);
         }
 
         // Print out files staged for addition
         System.out.println("=== Staged Files ===");
-        for (String name : add.keySet()) {
-            System.out.println(name);
+        for (String file : add.keySet()) {
+            System.out.println(file);
         }
         System.out.println();
 
         // Print out files staged for removal
         System.out.println("=== Removed Files ===");
         Collections.sort(rm);
-        for (String name : rm) {
-            System.out.println(name);
+        for (String file : rm) {
+            System.out.println(file);
         }
         System.out.println();
     }
@@ -396,11 +398,7 @@ public class Repository implements Serializable {
         writeObject(repository, this);
     }
 
-    /** Checks out all the files for a specified commit.
-     *
-     * SHOULD I MAKE IT SUCH THAT THE COMMITS BETWEEN END COMMIT AND TARGET COMMIT
-     * ARE DELETED FROM .GITLET? THAT WAY IT WON'T SHOW UP ON GLOBAL-LOG
-     */
+    /** Checks out all the files for a specified commit. */
     public void reset(String commitID) {
         // Check if concatenated ID
         if (commitID.length() < MAX_ID_LEN) {
@@ -426,42 +424,44 @@ public class Repository implements Serializable {
     /** Creates a new commit that merges files from a given branch to the current branch. */
     public void merge(String branchName) {
         // Find split point
-        String other = branches.get(branchName);
-        Commit split = splitFind(other, HEAD);
+        String thisID = HEAD;
+        String thatID = branches.get(branchName);
+        Commit split = splitFind(thatID, thisID);
 
         // Check if split and branch end are the same commit
-        if (HEAD.equals(split.id)) {
+        if (thisID.equals(split.id)) {
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
 
         // Check if split and HEAD are the same commit
-        if (other.equals(split.id)) {
+        if (thatID.equals(split.id)) {
             System.out.println("Given branch is an ancestor of the current branch.");
             System.exit(0);
         }
 
         // Fetch commits for each branch
-        Commit thisBranch = commitSearch.get(HEAD);
-        Commit thatBranch = commitSearch.get(other);
+        Commit thisCommit = commitSearch.get(thisID);
+        Commit thatCommit = commitSearch.get(thatID);
 
         // Find all unique filenames
-        Set<String> filenames = getAllFilenames(split.files, thisBranch.files, thatBranch.files);
+        Set<String> filenames = getAllFilenames(split.files, thisCommit.files, thatCommit.files);
 
         System.out.println(filenames);
 
         // Iterate over all filenames and update commit accordingly
-            for (String filename : filenames) {
-                boolean isInSplit = split.files.containsKey(filename);
-                boolean isInThis = thisBranch.files.containsKey(filename);
-                boolean isInThat = thatBranch.files.containsKey(filename);
-                boolean thisIsMod = false;
-                boolean thatIsMod = false;
+        for (String filename : filenames) {
+            // Check components
+            boolean isInSplit = split.files.containsKey(filename);
+            boolean isInThis = thisCommit.files.containsKey(filename);
+            boolean isInThat = thatCommit.files.containsKey(filename);
+            boolean thisIsMod = false;
+            boolean thatIsMod = false;
 
             // Check if file from thisBranch is modified compared to split point
             if (isInThis && isInSplit) {
                 // True if files are different versions
-                thisIsMod = !thisBranch.files.get(filename).equals(split.files.get(filename));
+                thisIsMod = !thisCommit.files.get(filename).equals(split.files.get(filename));
             } else if (!isInThis && isInSplit) {
                 // True if file was deleted since split
                 thisIsMod = true;
@@ -470,7 +470,7 @@ public class Repository implements Serializable {
             // Check if file from thatBranch is modified compared to split point
             if (isInThat && isInSplit) {
                 // True if files are different versions
-                thatIsMod = !thatBranch.files.get(filename).equals(split.files.get(filename));
+                thatIsMod = !thatCommit.files.get(filename).equals(split.files.get(filename));
             } else if (!isInThat && isInSplit) {
                 // True if file was deleted since split
                 thatIsMod = true;
@@ -479,52 +479,39 @@ public class Repository implements Serializable {
             // Check if file needs to be updated and update accordingly
             if (thisIsMod && thatIsMod) {
                 // Merge conflict for 2 files
-                String thisFile = thisBranch.files.get(filename);
-                String thatFile = thatBranch.files.get(filename);
+                String thisFile = thisCommit.files.get(filename);
+                String thatFile = thatCommit.files.get(filename);
                 mergeConflict(blobSearch.get(thisFile), blobSearch.get(thatFile));
                 add(filename);
             } else if (isInSplit && isInThis && !isInThat) {
                 rm(filename);
             } else if ((!isInSplit && !isInThis && isInThat) || (isInSplit && !thisIsMod && thatIsMod)) {
                 File filePath = join(CWD, filename);
-                String file = thatBranch.files.get(filename);
+                String file = thatCommit.files.get(filename);
                 System.out.println(file);
                 Blob blob = blobSearch.get(file);
                 writeContents(filePath, blob.content);
                 add(filename);
             }
         }
-        Commit c = commit("Merged " + branchName + " into " + currBranch + ".");
-        c.parents[1] = other;
+        //
+        Commit commit = commit("Merged " + branchName + " into " + currBranch + ".");
+        commit.parents[1] = thatID;
 
         // Save changes to repo
         writeObject(repository, this);
-
-        // 3. File is in split, modded in thatBranch, modded in thisBranch
-            // b. If modded to be diff blob or deleted = add merge conflict
-
-        // 1. File is in split, modded in thatBranch, in thisBranch = add file from thatBranch
-        // 5. File not in split, in thatBranch, not in thisBranch = add file from thatBranch
-
-        // 6. File is in split, not in thatBranch, in thisBranch = remove file
-
-        // 7. File is in split, in thatBranch, not in thisBranch = stays removed (no staging?)
-        // 2. File is in split, in thatBranch, modded in thisBranch = add file from thisBranch (no staging?)
-        // 4. File not in split, not in thatBranch, in thisBranch = add file from thisBranch (no staging?)
-        // 3. File is in split, modded in thatBranch, modded in thisBranch
-            // a. If modded to be same blob = add file from thisBranch (no staging?)
     }
 
     /***************************************************************************************************
      HELPER METHODS */
 
     /** Recursively prints commits + metadata. */
-    private void printCommitTree(Commit c) {
-        if (c == null) {
+    private void printCommitTree(Commit commit) {
+        if (commit == null) {
             return;
         }
-        System.out.println(c.toString());
-        printCommitTree(commitSearch.get(c.parents[0]));
+        System.out.println(commit.toString());
+        printCommitTree(commitSearch.get(commit.parents[0]));
     }
 
     /** Checks out files for a given commit or
@@ -541,6 +528,9 @@ public class Repository implements Serializable {
 
         // Check if filename is specified
         if (filename != null) {
+            // Set file location
+            File filesPath = join(CWD, filename);
+
             // Fetch file version as in commit
             String fileVersion = commit.files.get(filename);
 
@@ -552,11 +542,11 @@ public class Repository implements Serializable {
 
             // Writes file to CWD if fileVersion exists in commit
             Blob b = blobSearch.get(fileVersion);
-            writeContents(CWD, b.content);
+            writeContents(filesPath, b.content);
 
             // Updates stage
             rm.remove(filename);
-            writeContents(repository, this);
+            writeObject(repository, this);
         }
 
         // If filename is null, checkout all the files
@@ -573,17 +563,17 @@ public class Repository implements Serializable {
             Set<String> filesRemaining = new HashSet<>(commitList);
 
             // Fetch files from new commit
-            TreeMap<String, String> files = commit.files; // Name:SHA
+            TreeMap<String, String> commitFiles = commit.files; // Name:SHA
 
             // Add files from new commit to CWD
-            for (Map.Entry<String, String> entry : files.entrySet()) {
+            for (Map.Entry<String, String> entry : commitFiles.entrySet()) {
                 String fileName = entry.getKey();
                 String fileID = entry.getValue();
 
                 // Update file contents
                 Blob b = blobSearch.get(fileID);
-                File file_path = join(CWD, fileName);
-                writeContents(file_path, b.content);
+                File filePath = join(CWD, fileName);
+                writeContents(filePath, b.content);
 
                 // Update remaining files
                 filesRemaining.remove(filename);
@@ -591,8 +581,8 @@ public class Repository implements Serializable {
 
             // Remove remaining files in CWD from old commit
             for (String fileName : filesRemaining) {
-                File file_path = join(CWD, fileName);
-                file_path.delete();
+                File filePath = join(CWD, fileName);
+                filePath.delete();
             }
         }
 
@@ -612,29 +602,29 @@ public class Repository implements Serializable {
 
     /** Traverses branches until the most recent common ancestor Commit
      * is found using BFS. */
-    private Commit splitFind(String branch1, String branch2) {
+    private Commit splitFind(String branchID1, String branchID2) {
         Queue<String> queue = new LinkedList<>();
         Set<String> visited = new HashSet<>();
 
         // Add branch commitIDs to queue
-        queue.offer(branch1);
-        queue.offer(branch2);
+        queue.offer(branchID1);
+        queue.offer(branchID2);
 
         // Loop until common ancestor is found or queue is empty
         while (!queue.isEmpty()) {
-            String currentCommit = queue.poll();
+            String currCommitID = queue.poll();
 
             // Check if common ancestor
-            if (visited.contains(currentCommit)) {
-                return commitSearch.get(currentCommit);
+            if (visited.contains(currCommitID)) {
+                return commitSearch.get(currCommitID);
             }
 
             // Mark commitID as visited
-            visited.add(currentCommit);
+            visited.add(currCommitID);
 
             // Add parent commits to queue
-            Commit current = commitSearch.get(currentCommit);
-            for (String parent : current.parents) {
+            Commit currCommit = commitSearch.get(currCommitID);
+            for (String parent : currCommit.parents) {
                 if (parent != null) {
                     queue.offer(parent);
                 }
@@ -686,7 +676,7 @@ public class Repository implements Serializable {
     /***************************************************************************************************
      TEST METHODS */
 
-    public void test() {
+    public void testMerging() {
         File a = join(GITLET_DIR, "../a.txt");
         writeContents(a, "aaa");
         File b = join(GITLET_DIR, "../b.txt");
@@ -758,5 +748,18 @@ public class Repository implements Serializable {
         System.out.println("\n========\n");
 
         System.out.println(commitSearch.get(HEAD));
+    }
+
+    public void testBasicCheckout() {
+        File wug = join(GITLET_DIR, "../wug.txt");
+        writeContents(wug, "wug.txt");
+
+        add("wug.txt");
+
+        commit("added wug");
+
+        writeContents(wug, "notwug.txt");
+
+        checkout("wug.txt");
     }
 }
