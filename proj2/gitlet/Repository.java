@@ -22,8 +22,8 @@ public class Repository implements Serializable {
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    //public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
+    //public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
@@ -316,7 +316,7 @@ public class Repository implements Serializable {
         System.out.println();
 
         // Print out untracked files
-        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println("=== Untracked Files ===");
         System.out.println();
     }
 
