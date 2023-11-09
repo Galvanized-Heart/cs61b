@@ -1,10 +1,6 @@
 package gitlet;
 
-import java.io.File;
-
 import static gitlet.Utils.*;
-// maybe java.nio.file.Files
-// maybe java.io and java.nio have more useful stuff too?
 
 /** Driver class for Gitlet, a subset of the Git version-control system.
  *  @author Maxim Kirby
@@ -93,26 +89,26 @@ public class Main {
                 repo.status();
                 break;
 
-            case "checkout": // NEED TO REORDER THESE NOT TO PRODUCE ERRORS!!!
-                // java gitlet.Main checkout -- [file name]
-                if (args[1].equals("--")) {
-                    validateNumArgs(args, 3);
-                    repo.checkout(args[2]);
-                }
-
+            /** NEED TO REORDER THESE NOT TO PRODUCE ERRORS!!! */
+            case "checkout":
+                System.out.println(args.length);
                 // java gitlet.Main checkout [branch name]
-                else if (!args[1].equals("--")) {
-                    validateNumArgs(args, 2);
+                if (args.length == 2 && !args[1].equals("--")) {
                     repo.checkoutBranch(args[1]);
                 }
 
+                // java gitlet.Main checkout -- [file name]
+                else if (args.length == 3 && args[1].equals("--")) {
+                    repo.checkout(args[2]);
+                }
+
                 // java gitlet.Main checkout [commit id] -- [file name]
-                else if (args[2].equals("--")){
-                    validateNumArgs(args, 4);
+                else if (args.length == 4 && args[2].equals("--")) {
                     repo.checkout(args[3], args[1]);
                 }
 
-                else { // Incorrect formatting of operands
+                // Incorrect formatting of operands
+                else {
                     validateNumArgs(args, 0);
                 }
                 break;
@@ -141,16 +137,16 @@ public class Main {
                 repo.merge(args[1]);
                 break;
 
-            // push & pull are extra credit
-
             case "test1":
                 repo.testMerging();
                 break;
+
             case "test2":
                 repo.testBasicCheckout();
                 break;
+
             case "test3":
-                //repo.testMerging();
+                repo.test();
                 break;
 
             default:
@@ -161,7 +157,7 @@ public class Main {
 
     public static void validateNumArgs(String[] args, int n) {
         if (args.length != n) {
-            System.out.println("Incorrect operands."); // also has to be done for incorrect formatting of operands
+            System.out.println("Incorrect operands.");
             System.exit(0);
         }
     }

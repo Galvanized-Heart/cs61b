@@ -1,11 +1,8 @@
 package gitlet;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.Date;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import static gitlet.Utils.*;
 
 /** Represents a gitlet commit object.
@@ -34,7 +31,9 @@ public class Commit implements Serializable {
     /** Constructor. */
     public Commit(String m, String p, TreeMap<String, String> f) {
         message = m;
-        timestamp = new Date().toString();
+        Date currentDate = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
+        timestamp = sdf.format(currentDate);
         parents[0] = p;
         files = f;
         id = sha1(message + parents[0] + timestamp + files);

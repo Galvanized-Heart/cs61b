@@ -5,11 +5,6 @@ import java.io.File;
 import static gitlet.Utils.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.TreeMap;
-
 import java.util.*;
 
 /** Represents a gitlet repository.
@@ -27,7 +22,8 @@ public class Repository implements Serializable {
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
+    //public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
+    public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
@@ -444,8 +440,6 @@ public class Repository implements Serializable {
         // Find all unique filenames
         Set<String> filenames = getAllFilenames(split.files, thisCommit.files, thatCommit.files);
 
-        System.out.println(filenames);
-
         // Iterate over all filenames and update commit accordingly
         for (String filename : filenames) {
             // Check components
@@ -485,13 +479,13 @@ public class Repository implements Serializable {
             } else if ((!isInSplit && !isInThis && isInThat) || (isInSplit && !thisIsMod && thatIsMod)) {
                 File filePath = join(CWD, filename);
                 String file = thatCommit.files.get(filename);
-                System.out.println(file);
                 Blob blob = blobSearch.get(file);
                 writeContents(filePath, blob.content);
                 add(filename);
             }
         }
-        //
+
+        // Create merge commit and update 2nd parent
         Commit commit = commit("Merged " + branchName + " into " + currBranch + ".");
         commit.parents[1] = thatID;
 
@@ -560,7 +554,7 @@ public class Repository implements Serializable {
             Set<String> filesRemaining = new HashSet<>(commitList);
 
             // Fetch files from new commit
-            TreeMap<String, String> commitFiles = commit.files; // Name:SHA
+            TreeMap<String, String> commitFiles = commit.files;
 
             // Add files from new commit to CWD
             for (Map.Entry<String, String> entry : commitFiles.entrySet()) {
@@ -573,7 +567,7 @@ public class Repository implements Serializable {
                 writeContents(filePath, b.content);
 
                 // Update remaining files
-                filesRemaining.remove(filename);
+                filesRemaining.remove(fileName);
             }
 
             // Remove remaining files in CWD from old commit
@@ -760,10 +754,14 @@ public class Repository implements Serializable {
         checkout("wug.txt");
     }
 
+    public void test() {
+        Commit c = commitSearch.get(branches.get("other-branch"));
+        System.out.println(c.files);
+    }
+
+
     public void testReset() {
         File i = join(GITLET_DIR, "../i.txt");
         writeContents(i, "iii");
-
-
     }
 }

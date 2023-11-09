@@ -13,10 +13,5 @@ public class Blob implements Serializable {
         name = n;
         content = readContents(f);
         id = sha1(name, content);
-        //System.out.println("Blob constructed: " + name);
     }
-
-    // deleteBlob(sha)
-
-
 }
