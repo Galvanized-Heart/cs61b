@@ -13,8 +13,9 @@ import static gitlet.Utils.*;
  */
 
 public class Commit implements Serializable {
+    // TODO: Make instance variables private and create methods for access
 
-    /** SHAs for this Commit. */
+    /** ID for this Commit. */
     public String id;
 
     /** Metadata for Commit. */
@@ -25,7 +26,7 @@ public class Commit implements Serializable {
     public String[] parents = new String[2];
 
 
-    /** Name:SHA in Commit. */
+    /** Name:BlobID for files in Commit. */
     public TreeMap<String, String> files;
 
     /** Constructor. */
@@ -36,9 +37,10 @@ public class Commit implements Serializable {
         timestamp = sdf.format(currentDate);
         parents[0] = p;
         files = f;
-        id = sha1(message + parents[0] + timestamp + files);
+        id = sha1(message+parents[0]+timestamp+files);
     }
 
+    /** Formats printing of Commit. */
     @Override
     public String toString() {
         String result = "===\n" + "commit " + id;
@@ -49,7 +51,8 @@ public class Commit implements Serializable {
         return result;
     }
 
-    public void setOtherParent(String op) {
-        parents[1] = op;
+    /** Sets secondary parent to specified CommitID */
+    public void setOtherParent(String commitID) {
+        parents[1] = commitID;
     }
 }

@@ -5,6 +5,8 @@ import java.io.Serializable;
 import static gitlet.Utils.*;
 
 public class Blob implements Serializable {
+    // TODO: Make instance variables private and create methods for access
+
     public String id;
     public String name;
     public byte[] content;

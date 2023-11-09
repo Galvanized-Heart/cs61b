@@ -26,7 +26,7 @@ public class Main {
         // Check command and existence of repository
         if (!firstArg.equals("init")) {
             if (repoExists) {
-                repo = readObject(Repository.repository, Repository.class);
+                repo = readObject(Repository.REPOSITORY, Repository.class);
             } else {
                 System.out.println("Not in an initialized Gitlet directory.");
                 System.exit(0);
@@ -74,7 +74,7 @@ public class Main {
             case "global-log":
                 // java gitlet.Main global-log
                 validateNumArgs(args, 1);
-                repo.global_log();
+                repo.globalLog();
                 break;
 
             case "find":
@@ -145,8 +145,12 @@ public class Main {
                 repo.testBasicCheckout();
                 break;
 
-            case "test3":
-                repo.test();
+            case "test33":
+                repo.test33();
+                break;
+
+            case "test34":
+                repo.test34();
                 break;
 
             default:

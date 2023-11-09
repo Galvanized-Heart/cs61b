@@ -22,33 +22,33 @@ public class Repository implements Serializable {
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    //public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
+    //public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
 
     /** Directories within .gitlet. */
-    public static final File commits = join(GITLET_DIR, "commits");
-    public static final File blobs = join(GITLET_DIR, "blobs");
+    public static final File COMMITS = join(GITLET_DIR, "commits");
+    public static final File BLOBS = join(GITLET_DIR, "blobs");
 
     /** File for Repo within .gitlet */
-    public static final File repository = join(GITLET_DIR, "repository");
+    public static final File REPOSITORY = join(GITLET_DIR, "repository");
 
     /** Reference to top of the master and side branches. */
-    public HashMap<String, String> branches = new HashMap<>();
-    public String currBranch = null;
+    private HashMap<String, String> branches = new HashMap<>();
+    private String currBranch = null;
 
     /** Reference to current Commit. */
-    public String HEAD = null;
+    private String HEAD = null;
 
     /** Mapping of IDs to all other Objects required for Gitlet. */
-    public HashMap<String, Commit> commitSearch = new HashMap<>();
-    public HashMap<String, Blob> blobSearch = new HashMap<>();
+    private HashMap<String, Commit> commitSearch = new HashMap<>();
+    private HashMap<String, Blob> blobSearch = new HashMap<>();
 
     /** Name:ID adding and removing on stage. */
-    public TreeMap<String, String> add = new TreeMap<>();
-    public ArrayList<String> rm = new ArrayList<>();
+    private TreeMap<String, String> add = new TreeMap<>();
+    private ArrayList<String> rm = new ArrayList<>();
 
     /***************************************************************************************************
      MAIN METHODS */
@@ -60,12 +60,12 @@ public class Repository implements Serializable {
         GITLET_DIR.mkdir();
 
         // Create folders inside .gitlet
-        commits.mkdir();
-        blobs.mkdir();
+        COMMITS.mkdir();
+        BLOBS.mkdir();
 
         // Create initial commit
         Commit commit = new Commit("initial commit", null, new TreeMap<>());
-        File commitPath = join(commits, commit.id);
+        File commitPath = join(COMMITS, commit.id);
 
         // Create repo with hash for initial commit
         String commitID = commit.id;
@@ -77,15 +77,15 @@ public class Repository implements Serializable {
         // Create persistent files for initial commit and repo
         try {
             commitPath.createNewFile();
-            repository.createNewFile();
+            REPOSITORY.createNewFile();
         }
-        catch (Exception e){
+        catch (Exception e) {
             System.err.println(e.getMessage());
         }
 
         // Save initial commit and repo
         writeObject(commitPath, commit);
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Sets blob to be added to next commit by staging it for addition. */
@@ -127,19 +127,18 @@ public class Repository implements Serializable {
 
         // Check if file is same version and is in current commit
         else if (blobID.equals(currentFileId)) {
-            // Remove file from addition stage
             add.remove(filename);
         }
 
         // Delete old blob if overwriting stage
         if (stagedFileId != null) {
-            File oldBlobPath = join(blobs, stagedFileId);
+            File oldBlobPath = join(BLOBS, stagedFileId);
             oldBlobPath.delete();
             blobSearch.remove(stagedFileId);
         }
 
         // Create new blob if it doesn't already exist
-        File blobPath = join(blobs, blob.id);
+        File blobPath = join(BLOBS, blob.id);
         if (!blobPath.exists()) {
             try {
                 blobPath.createNewFile();
@@ -157,7 +156,7 @@ public class Repository implements Serializable {
         //  do not add it to add stage
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Creates new commit object with updated content from the staging area,
@@ -204,17 +203,17 @@ public class Repository implements Serializable {
         rm = new ArrayList<>();
 
         // Create persistent files for initial commit and repo
-        File commit_path = join(commits, newCommit.id);
+        File commitPath = join(COMMITS, newCommit.id);
         try {
-            commit_path.createNewFile();
+            commitPath.createNewFile();
         }
-        catch (Exception e){
+        catch (Exception e) {
             System.err.println(e.getMessage());
         }
 
         // Save initial commit and repo
-        writeObject(commit_path, newCommit);
-        writeObject(repository, this);
+        writeObject(commitPath, newCommit);
+        writeObject(REPOSITORY, this);
 
         return newCommit;
     }
@@ -245,7 +244,7 @@ public class Repository implements Serializable {
         }
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Prints out all commits in the current branch starting from the HEAD pointer
@@ -256,12 +255,8 @@ public class Repository implements Serializable {
     }
 
     /** Prints out all commits saved to the .gitlet directory. */
-    public void global_log() {
-        List<String> commitList = plainFilenamesIn(commits);
-        if (commitList == null) {
-            System.out.println("Found no commit with that message.");
-            System.exit(0);
-        }
+    public void globalLog() {
+        List<String> commitList = plainFilenamesIn(COMMITS);
         for (String commitID : commitList) {
             Commit commit = commitSearch.get(commitID);
             System.out.println(commit.toString());
@@ -271,16 +266,18 @@ public class Repository implements Serializable {
     /** Prints out all commits saved to the .gitlet directory with
      * the specified message. */
     public void find(String commitMessage) {
-        List<String> commitList = plainFilenamesIn(commits);
-        if (commitList == null) {
-            System.out.println("Found no commit with that message.");
-            System.exit(0);
-        }
+        boolean cannotFindMessage = true;
+        List<String> commitList = plainFilenamesIn(COMMITS);
         for (String commitID : commitList) {
             Commit commit = commitSearch.get(commitID);
             if (commit.message.equals(commitMessage)) {
-                System.out.println(commit.toString());
+                System.out.println(commit.id); // check this change in gradescope!
+                cannotFindMessage = false;
             }
+        }
+        if (cannotFindMessage) {
+            System.out.println("Found no commit with that message."); // check this change in gradescope!
+            System.exit(0);
         }
     }
 
@@ -364,7 +361,7 @@ public class Repository implements Serializable {
         HEAD = branches.get(branchName);
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Adds a new branch to the map of branches. */
@@ -379,7 +376,7 @@ public class Repository implements Serializable {
         branches.put(branchName, HEAD);
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Removes an existing branch from the map of branches. */
@@ -400,7 +397,7 @@ public class Repository implements Serializable {
         branches.remove(branchName);
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Checks out all the files for a specified commit. */
@@ -410,9 +407,14 @@ public class Repository implements Serializable {
             commitID = findCommit(commitID);
         }
 
+        if (!commitSearch.containsKey(commitID)) {
+            System.out.println("No commit with that id exists.");
+            System.exit(0);
+        }
+
         // Changes files in CWD to files in commit
         Commit commit = commitSearch.get(commitID);
-        checkoutFiles(commit);
+        checkoutFiles(commit); // TODO: Make is such that errors are caught outside this function
 
         // Update HEAD and branch pointers
         branches.put(currBranch, commitID);
@@ -423,11 +425,35 @@ public class Repository implements Serializable {
         rm = new ArrayList<>();
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Creates a new commit that merges files from a given branch to the current branch. */
     public void merge(String branchName) {
+        // TODO: Check for untracked file that would be deleted from CWD
+        if (false) {
+            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+            System.exit(0);
+        }
+
+        // Check if there are staged items
+        if (!add.isEmpty() || !rm.isEmpty()) {
+            System.out.println("You have uncommitted changes.");
+            System.exit(0);
+        }
+
+        // Check if branch exists
+        if (!branches.containsKey(branchName)) {
+            System.out.println("A branch with that name does not exist.");
+            System.exit(0);
+        }
+
+        // Check if given branch is the current branch
+        if (branchName.equals(currBranch)) {
+            System.out.println("Cannot merge a branch with itself.");
+            System.exit(0);
+        }
+
         // Find split point
         String thisID = HEAD;
         String thatID = branches.get(branchName);
@@ -435,6 +461,7 @@ public class Repository implements Serializable {
 
         // Check if split and branch end are the same commit
         if (thisID.equals(split.id)) {
+            checkoutBranch(branchName);
             System.out.println("Current branch fast-forwarded.");
             System.exit(0);
         }
@@ -502,7 +529,7 @@ public class Repository implements Serializable {
         commit.parents[1] = thatID;
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /***************************************************************************************************
@@ -523,6 +550,7 @@ public class Repository implements Serializable {
         checkoutFiles(commit, null);
     }
     private void checkoutFiles(Commit commit, String filename) {
+        // TODO: Remove error catches from this function!
         // Check if commit exists
         if (commit == null) {
             System.out.println("No commit with that id exists.");
@@ -549,13 +577,15 @@ public class Repository implements Serializable {
 
             // Updates stage
             rm.remove(filename);
-            writeObject(repository, this);
+            writeObject(REPOSITORY, this);
         }
 
         // If filename is null, checkout all the files
         else {
             // Check if stage contains items
-            if (!add.isEmpty() || !rm.isEmpty()) {
+            if (!add.isEmpty() || !rm.isEmpty()) { // this check should actually be different
+                // TODO: Make it so that we have a way to track untracked files and update
+                //  this section!
                 System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
                 System.exit(0);
             }
@@ -590,7 +620,7 @@ public class Repository implements Serializable {
         }
 
         // Save changes to repo
-        writeObject(repository, this);
+        writeObject(REPOSITORY, this);
     }
 
     /** Returns the full length ID from a partial ID of a commit. */
@@ -766,14 +796,73 @@ public class Repository implements Serializable {
         checkout("wug.txt");
     }
 
-    public void test() {
-        Commit c = commitSearch.get(branches.get("other-branch"));
-        System.out.println(c.files);
+    // CHANGE CWD BEFORE SUBMITTING TO GRADESCOPE!!!
+
+    public void test33() { // Im pretty sure this works as intended. Status prints branches in wrong order?
+        File f = join(GITLET_DIR, "../f.txt");
+        writeContents(f, "wug.txt");
+        File g = join(GITLET_DIR, "../g.txt");
+        writeContents(g, "notwug.txt");
+        add("f.txt");
+        add("g.txt");
+        commit("Two files");
+
+        branch("other");
+
+        File h = join(GITLET_DIR, "../h.txt");
+        writeContents(h, "wug2.txt");
+        add("h.txt");
+        rm("g.txt");
+        commit("Add h.txt and remove g.txt");
+
+        checkoutBranch("other");
+
+        rm("f.txt");
+        File k = join(GITLET_DIR, "../k.txt");
+        writeContents(k, "wug3.txt");
+        add("k.txt");
+        commit("Add k.txt and remove f.txt");
+
+        checkoutBranch("master");
+
+        merge("other");
     }
 
+    public void test34() {
+        // Test says it failed on the merge conflict for f.txt (my inspection of files indicates it works as intended)
+        File f = join(GITLET_DIR, "../f.txt");
+        writeContents(f, "wug.txt");
+        File g = join(GITLET_DIR, "../g.txt");
+        writeContents(g, "notwug.txt");
+        add("f.txt");
+        add("g.txt");
+        commit("Two files");
 
-    public void testReset() {
-        File i = join(GITLET_DIR, "../i.txt");
-        writeContents(i, "iii");
+        branch("other");
+
+        File h = join(GITLET_DIR, "../h.txt");
+        writeContents(h, "wug2.txt");
+        add("h.txt");
+        rm("g.txt");
+        writeContents(f, "wug2.txt");
+        add("f.txt");
+        commit("Add h.txt, remove g.txt, and change f.txt");
+
+        checkoutBranch("other");
+
+        writeContents(f, "notwug.txt");
+        add("f.txt");
+        File k = join(GITLET_DIR, "../k.txt");
+        writeContents(k, "wug3.txt");
+        add("k.txt");
+        commit("Add k.txt and modify f.txt");
+
+        checkoutBranch("master");
+
+        merge("other");
+    }
+
+    public void test36() {
+
     }
 }
