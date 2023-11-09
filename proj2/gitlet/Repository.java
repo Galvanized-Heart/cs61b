@@ -153,6 +153,9 @@ public class Repository implements Serializable {
             writeObject(blobPath, blob);
         }
 
+        // TODO: Add functionality to take out a file from the removal stage if it is there and
+        //  do not add it to add stage
+
         // Save changes to repo
         writeObject(repository, this);
     }
@@ -291,6 +294,7 @@ public class Repository implements Serializable {
             }
             System.out.println(branch);
         }
+        System.out.println();
 
         // Print out files staged for addition
         System.out.println("=== Staged Files ===");
@@ -305,6 +309,14 @@ public class Repository implements Serializable {
         for (String file : rm) {
             System.out.println(file);
         }
+        System.out.println();
+
+        // Print out unstaged files that have been modified
+        System.out.println("=== Modifications Not Staged For Commit ===");
+        System.out.println();
+
+        // Print out untracked files
+        System.out.println("=== Modifications Not Staged For Commit ===");
         System.out.println();
     }
 
