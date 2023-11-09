@@ -22,8 +22,8 @@ public class Repository implements Serializable {
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    // public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
+    //public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
@@ -36,7 +36,7 @@ public class Repository implements Serializable {
     public static final File REPOSITORY = join(GITLET_DIR, "repository");
 
     /** Reference to top of the master and side branches. */
-    private HashMap<String, String> branches = new HashMap<>();
+    private TreeMap<String, String> branches = new TreeMap<>();
     private String currBranch = null;
 
     /** Reference to current Commit. */
@@ -48,7 +48,10 @@ public class Repository implements Serializable {
 
     /** Name:ID adding and removing on stage. */
     private TreeMap<String, String> add = new TreeMap<>();
-    private ArrayList<String> rm = new ArrayList<>();
+    private TreeSet<String> rm = new TreeSet<>();
+
+    /** Names of untracked files in CWD. */
+    private TreeSet<String> untrackedFiles = new TreeSet<>(); // TODO: Should this be a list? Should this even exists?
 
     /***************************************************************************************************
      MAIN METHODS */
@@ -97,6 +100,15 @@ public class Repository implements Serializable {
             return;
         }
 
+        // TODO: Add functionality to take out a file from the removal stage if it is there and
+        //  do not add it to add stage (test change!!!)
+        // Check if file is staged for removal
+        if (rm.contains(filename)) {
+            // Remove from staged removals
+            rm.remove(filename);
+            return;
+        }
+
         // Create new blob
         Blob blob = new Blob(filePath, filename);
 
@@ -105,7 +117,6 @@ public class Repository implements Serializable {
         String currentFileId = currentCommit.files.get(filename);
         String stagedFileId = add.get(filename);
         String blobID = null;
-        boolean overwrite = false;
 
         // Check if file is in current commit
         if (currentFileId != null) {
@@ -115,7 +126,6 @@ public class Repository implements Serializable {
         // Check if file is staged for addition
         else if (stagedFileId != null) {
             blobID = stagedFileId;
-            overwrite = true;
         }
 
         // Check if file is a different version of filename
@@ -152,9 +162,6 @@ public class Repository implements Serializable {
             writeObject(blobPath, blob);
         }
 
-        // TODO: Add functionality to take out a file from the removal stage if it is there and
-        //  do not add it to add stage
-
         // Save changes to repo
         writeObject(REPOSITORY, this);
     }
@@ -188,8 +195,12 @@ public class Repository implements Serializable {
             newCommit.files.putAll(add);
 
             // Remove files from new commit that are staged for removal
-            for (int i = 0; i < rm.size(); i++) {
+            /**for (int i = 0; i < rm.size(); i++) {
                 newCommit.files.remove(rm.get(i));
+            } Replaced this, verify it works accordingly!!!
+             */
+            for (String filename : rm) {
+                newCommit.files.remove(filename);
             }
             commitSearch.put(newCommit.id, newCommit);
         }
@@ -200,7 +211,7 @@ public class Repository implements Serializable {
 
         // Clear stage
         add = new TreeMap<>();
-        rm = new ArrayList<>();
+        rm = new TreeSet<>();
 
         // Create persistent files for initial commit and repo
         File commitPath = join(COMMITS, newCommit.id);
@@ -283,6 +294,15 @@ public class Repository implements Serializable {
 
     /** Prints info about current branch, staged, and removed files */
     public void status() {
+        // Fetch all files from CWD
+        List<String> cwdFiles = plainFilenamesIn(CWD);
+        TreeSet<String> filesRemaining;
+        if (cwdFiles != null) {
+            filesRemaining = new TreeSet<>(cwdFiles);
+        } else {
+            filesRemaining = new TreeSet<>();
+        }
+
         // Print out branches
         System.out.println("=== Branches ===");
         for (String branch : branches.keySet()) {
@@ -295,16 +315,17 @@ public class Repository implements Serializable {
 
         // Print out files staged for addition
         System.out.println("=== Staged Files ===");
-        for (String file : add.keySet()) {
-            System.out.println(file);
+        for (String filename : add.keySet()) {
+            System.out.println(filename);
+            filesRemaining.remove(filename);
         }
         System.out.println();
 
         // Print out files staged for removal
         System.out.println("=== Removed Files ===");
-        Collections.sort(rm);
-        for (String file : rm) {
-            System.out.println(file);
+        for (String filename : rm) {
+            System.out.println(filename);
+            filesRemaining.remove(filename);
         }
         System.out.println();
 
@@ -314,6 +335,10 @@ public class Repository implements Serializable {
 
         // Print out untracked files
         System.out.println("=== Untracked Files ===");
+        untrackedFiles = filesRemaining;
+        for (String filename : untrackedFiles) {
+            System.out.println(filename);
+        }
         System.out.println();
     }
 
@@ -329,7 +354,7 @@ public class Repository implements Serializable {
 
         // Changes file to version in commit
         Commit commit = commitSearch.get(commitID);
-        checkoutFiles(commit, filename);
+        checkoutFile(commit, filename);
     }
 
     public void checkoutBranch(String branchName) {
@@ -345,6 +370,23 @@ public class Repository implements Serializable {
             System.exit(0);
         }
 
+        // Fetch all files from CWD
+        List<String> filesRemaining = plainFilenamesIn(CWD);
+        // Check if there are any files in CWD
+        if (filesRemaining != null) {
+            for (String fileName : filesRemaining) {
+                if (add.containsKey(fileName) || rm.contains(fileName)) {
+                    filesRemaining.remove(fileName);
+                }
+            }
+
+            // Check if there are untracked files
+            if (!filesRemaining.isEmpty()) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
+        }
+
         // Changes files in CWD to files in branch commit
         Commit commit = commitSearch.get(branches.get(branchName));
         checkoutFiles(commit);
@@ -353,7 +395,7 @@ public class Repository implements Serializable {
         if (!currBranch.equals(branchName)) {
             // Clear stage
             add = new TreeMap<>();
-            rm = new ArrayList<>();
+            rm = new TreeSet<>();
         }
 
         // Update HEAD and current-branch pointers
@@ -422,7 +464,7 @@ public class Repository implements Serializable {
 
         // Clear stage
         add = new TreeMap<>();
-        rm = new ArrayList<>();
+        rm = new TreeSet<>();
 
         // Save changes to repo
         writeObject(REPOSITORY, this);
@@ -430,11 +472,26 @@ public class Repository implements Serializable {
 
     /** Creates a new commit that merges files from a given branch to the current branch. */
     public void merge(String branchName) {
-        // TODO: Check for untracked file that would be deleted from CWD
-        if (false) {
-            System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-            System.exit(0);
+        // TODO: Test this
+
+        // Fetch all files from CWD
+        List<String> filesRemaining = plainFilenamesIn(CWD);
+
+        // Check if there are any files in CWD
+        if (filesRemaining != null) {
+            for (String filename : filesRemaining) {
+                if (add.containsKey(filename) || rm.contains(filename)) {
+                    filesRemaining.remove(filename);
+                }
+            }
+
+            // Check if there are untracked files
+            if (!filesRemaining.isEmpty()) {
+                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
+                System.exit(0);
+            }
         }
+
 
         // Check if there are staged items
         if (!add.isEmpty() || !rm.isEmpty()) {
@@ -546,78 +603,63 @@ public class Repository implements Serializable {
 
     /** Checks out files for a given commit or
      * a single file for if filename is given. */
-    private void checkoutFiles(Commit commit) {
+    private void checkoutFiles(Commit commit) { // TODO: Is this needed?
         checkoutFiles(commit, null);
     }
-    private void checkoutFiles(Commit commit, String filename) {
-        // TODO: Remove error catches from this function!
+    private void checkoutFile(Commit commit, String filename) {
         // Check if commit exists
         if (commit == null) {
             System.out.println("No commit with that id exists.");
             System.exit(0);
         }
 
-        // Check if filename is specified
-        if (filename != null) {
-            // Set file location
-            File filesPath = join(CWD, filename);
+        // Set file location
+        File filesPath = join(CWD, filename);
 
-            // Fetch file version as in commit
-            String fileVersion = commit.files.get(filename);
+        // Fetch file version as in commit
+        String fileVersion = commit.files.get(filename);
 
-            // Check if fileVersion exists in commit
-            if (fileVersion == null) {
-                System.out.println("File does not exist in that commit.");
-                System.exit(0);
-            }
-
-            // Writes file to CWD if fileVersion exists in commit
-            Blob b = blobSearch.get(fileVersion);
-            writeContents(filesPath, b.content);
-
-            // Updates stage
-            rm.remove(filename);
-            writeObject(REPOSITORY, this);
+        // Check if fileVersion exists in commit
+        if (fileVersion == null) {
+            System.out.println("File does not exist in that commit.");
+            System.exit(0);
         }
 
-        // If filename is null, checkout all the files
-        else {
-            // Check if stage contains items
-            if (!add.isEmpty() || !rm.isEmpty()) { // this check should actually be different
-                // TODO: Make it so that we have a way to track untracked files and update
-                //  this section!
-                System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
-                System.exit(0);
-            }
+        // Writes file to CWD if fileVersion exists in commit
+        Blob b = blobSearch.get(fileVersion);
+        writeContents(filesPath, b.content);
 
-            // Fetch files in CWD
-            List<String> commitList = plainFilenamesIn(CWD);
-            assert commitList != null;
-            Set<String> filesRemaining = new HashSet<>(commitList);
+        // Updates stage
+        rm.remove(filename);
+        writeObject(REPOSITORY, this);
+    }
 
-            // Fetch files from new commit
-            TreeMap<String, String> commitFiles = commit.files;
+    private void checkoutFiles(Commit commit, List<String> filesList) {
+        // TODO: Remove error catches from this function!
 
-            // Add files from new commit to CWD
-            for (Map.Entry<String, String> entry : commitFiles.entrySet()) {
-                String fileName = entry.getKey();
-                String fileID = entry.getValue();
+        // Fetch files from new commit
+        TreeMap<String, String> commitFiles = commit.files;
 
-                // Update file contents
-                Blob b = blobSearch.get(fileID);
-                File filePath = join(CWD, fileName);
-                writeContents(filePath, b.content);
+        // Add files from new commit to CWD
+        for (Map.Entry<String, String> entry : commitFiles.entrySet()) {
+            String fileName = entry.getKey();
+            String fileID = entry.getValue();
 
-                // Update remaining files
-                filesRemaining.remove(fileName);
-            }
+            // Update file contents
+            Blob b = blobSearch.get(fileID);
+            File filePath = join(CWD, fileName);
+            writeContents(filePath, b.content);
 
-            // Remove remaining files in CWD from old commit
-            for (String fileName : filesRemaining) {
-                File filePath = join(CWD, fileName);
-                filePath.delete();
-            }
+            // Update remaining files
+            filesRemaining.remove(fileName);
         }
+
+        // Remove remaining files in CWD from old commit
+        for (String fileName : filesRemaining) {
+            File filePath = join(CWD, fileName);
+            filePath.delete();
+        } // TODO: Make it so that this does not delete untracked files
+
 
         // Save changes to repo
         writeObject(REPOSITORY, this);
@@ -831,9 +873,9 @@ public class Repository implements Serializable {
     public void test34() {
         // Test says it failed on the merge conflict for f.txt (my inspection of files indicates it works as intended)
         File f = join(GITLET_DIR, "../f.txt");
-        writeContents(f, "wug.txt");
+        writeContents(f, "This is a wug.");
         File g = join(GITLET_DIR, "../g.txt");
-        writeContents(g, "notwug.txt");
+        writeContents(g, "This is not a wug.");
         add("f.txt");
         add("g.txt");
         commit("Two files");
@@ -841,19 +883,19 @@ public class Repository implements Serializable {
         branch("other");
 
         File h = join(GITLET_DIR, "../h.txt");
-        writeContents(h, "wug2.txt");
+        writeContents(h, "Another wug.");
         add("h.txt");
         rm("g.txt");
-        writeContents(f, "wug2.txt");
+        writeContents(f, "Another wug.");
         add("f.txt");
         commit("Add h.txt, remove g.txt, and change f.txt");
 
         checkoutBranch("other");
 
-        writeContents(f, "notwug.txt");
+        writeContents(f, "This is not a wug.");
         add("f.txt");
         File k = join(GITLET_DIR, "../k.txt");
-        writeContents(k, "wug3.txt");
+        writeContents(k, "And yet another wug.");
         add("k.txt");
         commit("Add k.txt and modify f.txt");
 

@@ -89,7 +89,6 @@ public class Main {
                 repo.status();
                 break;
 
-            /** NEED TO REORDER THESE NOT TO PRODUCE ERRORS!!! */
             case "checkout":
                 System.out.println(args.length);
                 // java gitlet.Main checkout [branch name]
