@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import static gitlet.Utils.*;
 
-/** Represents a gitlet commit object.
+/** Represents a gitlet commit object. **
  *  TODO: It's a good idea to give a description here of what else this Class
  *  does at a high level.
  *
@@ -13,21 +13,24 @@ import static gitlet.Utils.*;
  */
 
 public class Commit implements Serializable {
-    // TODO: Make instance variables private and create methods for access
+    /***************************************************************************************************
+    INSTANCE VARIABLES */
 
-    /** ID for this Commit. */
-    public String id;
+    /** Unique identifier for this Commit. */
+    private String id;
 
     /** Metadata for Commit. */
-    public String message;
-    public String timestamp;
+    private String message;
+    private String timestamp;
 
-    /** IDs for each parent Commit. */
-    public String[] parents = new String[2];
+    /** IDs for each parent Commits. */
+    private String[] parents;
 
+    /** Mapping of filenames to Blob IDs for files in the Commit. */
+    private TreeMap<String, String> files;
 
-    /** Name:BlobID for files in Commit. */
-    public TreeMap<String, String> files;
+    /***************************************************************************************************
+     MAIN METHODS */
 
     /** Constructor. */
     public Commit(String m, String p, TreeMap<String, String> f) {
@@ -35,9 +38,40 @@ public class Commit implements Serializable {
         Date currentDate = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("E MMM dd HH:mm:ss yyyy Z");
         timestamp = sdf.format(currentDate);
+        parents = new String[2];
         parents[0] = p;
         files = f;
         id = sha1(message+parents[0]+timestamp+files);
+    }
+
+    /** Returns String of Commit ID. */
+    public String getId() {
+        return id;
+    }
+
+    /** Returns String of Commit message. */
+    public String getMessage() {
+        return message;
+    }
+
+    /** Returns String of Commit timestamp. */
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    /** Returns String array of Commits parent IDs. */
+    public String[] getParents() {
+        return parents;
+    }
+
+    /** Sets secondary parent to specified Commit ID. */
+    public void setOtherParent(String commitID) {
+        parents[1] = commitID;
+    }
+
+    /** Returns TreeMap of filenames to Blob IDs for Commit. */
+    public TreeMap<String, String> getFiles() {
+        return files;
     }
 
     /** Formats printing of Commit. */
@@ -49,10 +83,5 @@ public class Commit implements Serializable {
         }
         result += "\nDate: " + timestamp + "\n" + message+"\n";
         return result;
-    }
-
-    /** Sets secondary parent to specified CommitID */
-    public void setOtherParent(String commitID) {
-        parents[1] = commitID;
     }
 }

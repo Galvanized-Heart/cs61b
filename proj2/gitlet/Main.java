@@ -136,22 +136,6 @@ public class Main {
                 repo.merge(args[1]);
                 break;
 
-            case "test1":
-                repo.testMerging();
-                break;
-
-            case "test15":
-                repo.test15();
-                break;
-
-            case "test33":
-                repo.test33();
-                break;
-
-            case "test34":
-                repo.test34();
-                break;
-
             default:
                 System.out.println("No command with that name exists.");
                 System.exit(0);
