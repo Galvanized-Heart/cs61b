@@ -140,8 +140,8 @@ public class Main {
                 repo.testMerging();
                 break;
 
-            case "test2":
-                repo.testBasicCheckout();
+            case "test15":
+                repo.test15();
                 break;
 
             case "test33":

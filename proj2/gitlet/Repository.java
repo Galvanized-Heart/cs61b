@@ -22,8 +22,8 @@ public class Repository implements Serializable {
     public static final int MAX_ID_LEN = 40;
 
     /** The current working directory. */
-    //public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
-    public static final File CWD = new File(System.getProperty("user.dir"));
+    public static final File CWD = join(new File(System.getProperty("user.dir")), "danger-zone"); // Remove join and "danger-zone" when done testing
+    //public static final File CWD = new File(System.getProperty("user.dir"));
 
     /** The .gitlet directory. */
     public static final File GITLET_DIR = join(CWD, ".gitlet");
@@ -49,9 +49,6 @@ public class Repository implements Serializable {
     /** Name:ID adding and removing on stage. */
     private TreeMap<String, String> add = new TreeMap<>();
     private TreeSet<String> rm = new TreeSet<>();
-
-    /** Names of untracked files in CWD. */
-    private TreeSet<String> untrackedFiles = new TreeSet<>(); // TODO: Should this be a list? Should this even exists?
 
     /***************************************************************************************************
      MAIN METHODS */
@@ -100,8 +97,6 @@ public class Repository implements Serializable {
             return;
         }
 
-        // TODO: Add functionality to take out a file from the removal stage if it is there and
-        //  do not add it to add stage (test change!!!)
         // Check if file is staged for removal
         if (rm.contains(filename)) {
             // Remove from staged removals
@@ -324,8 +319,7 @@ public class Repository implements Serializable {
 
         // Print out untracked files
         System.out.println("=== Untracked Files ===");
-        untrackedFiles = untrackedFiles();
-        for (String filename : untrackedFiles) {
+        for (String filename : untrackedFiles()) {
             System.out.println(filename);
         }
         System.out.println();
@@ -445,8 +439,6 @@ public class Repository implements Serializable {
 
     /** Creates a new commit that merges files from a given branch to the current branch. */
     public void merge(String branchName) {
-        // TODO: Test this
-
         // Check if there are untracked files
         if (!untrackedFiles().isEmpty()) {
             System.out.println("There is an untracked file in the way; delete it, or add and commit it first.");
@@ -726,16 +718,18 @@ public class Repository implements Serializable {
         if (blob1 != null) {
             filePath = join(CWD, blob1.name);
             content1 = new String(blob1.content, StandardCharsets.UTF_8);
+            content1 += "\n";
         } else { content1 = ""; }
 
         // Read contents from blob2 as string
         if (blob2 != null) {
             filePath = join(CWD, blob2.name);
             content2 = new String(blob2.content, StandardCharsets.UTF_8);
+            content2 += "\n";
         } else { content2 = ""; }
 
         // Build merge conflict contents
-        String result = "<<<<<<< HEAD\n" + content1 + "\n" + "=======\n" + content2 + "\n" + ">>>>>>>";
+        String result = "<<<<<<< HEAD\n" + content1 + "=======\n" + content2 + ">>>>>>>";
         byte[] bytes = result.getBytes();
 
         // Update file with merge conflict contents
@@ -744,7 +738,6 @@ public class Repository implements Serializable {
 
     /***************************************************************************************************
      TEST METHODS */
-
     public void testMerging() {
         File a = join(GITLET_DIR, "../a.txt");
         writeContents(a, "aaa");
@@ -898,7 +891,21 @@ public class Repository implements Serializable {
         merge("other");
     }
 
-    public void test36() {
+    public void test15() {
+        File f = join(GITLET_DIR, "../f.txt");
+        writeContents(f, "This is a wug.");
+        File g = join(GITLET_DIR, "../g.txt");
+        writeContents(g, "This is not a wug.");
+        add("f.txt");
+        add("g.txt");
+        commit("Two files");
 
+        rm("f.txt");
+        System.out.println("Removed F");
+        status();
+        writeContents(f, "This is a wug.");
+        add("f.txt");
+        System.out.println("Added F");
+        status();
     }
 }
